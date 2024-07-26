@@ -139,7 +139,7 @@ public class FHIRplaceUtil {
    * @param params - the LocalParameters object
    * @return true if we are sending, otherwise false
    */
-  public static boolean isSending( Transmission trans, LocalParameters params ) {
+  public static boolean isSending(Transmission trans, LocalParameters params) {
     return (trans != null && 
             trans.getOriginator().equalsIgnoreCase(params.getXMLIdentifier()));
   }  
@@ -235,55 +235,7 @@ public class FHIRplaceUtil {
       case FHIRplaceConstants.SENT_NOT_OK:
         if (instruct.getSendID() != null)
           statusFile = params.getStatusDirectory() + FHIRplaceConstants.FILE_SEPARATOR + instruct.getSendID() + APPEND_NEGATIVE;
-        break;
-      case FHIRplaceConstants.SENT_ACCESS_TOKEN_OK :
-        if (instruct.getSendAccessTokenID() != null)
-          statusFile = params.getStatusDirectory() + FHIRplaceConstants.FILE_SEPARATOR + instruct.getSendAccessTokenID() + APPEND_POSTIVE;
-        break;
-      case FHIRplaceConstants.SENT_ACCESS_TOKEN_NOT_OK :
-        if (instruct.getSendAccessTokenID() != null)
-          statusFile = params.getStatusDirectory() + FHIRplaceConstants.FILE_SEPARATOR + instruct.getSendAccessTokenID() + APPEND_NEGATIVE;
-        break;
-      case FHIRplaceConstants.SENT_FHIR_ID_OK :
-        if (instruct.getSendFhirID() != null)
-          statusFile = params.getStatusDirectory() + FHIRplaceConstants.FILE_SEPARATOR + instruct.getSendFhirID() + APPEND_POSTIVE;
-        break;
-      case FHIRplaceConstants.SENT_FHIR_ID_NOT_OK :
-        if (instruct.getSendFhirID() != null)
-          statusFile = params.getStatusDirectory() + FHIRplaceConstants.FILE_SEPARATOR + instruct.getSendFhirID() + APPEND_NEGATIVE;
-        break;
-      case FHIRplaceConstants.SENT_PDEX_REQUEST_OK :
-        if (instruct.getSendPdexRequestID() != null)
-          statusFile = params.getStatusDirectory() + FHIRplaceConstants.FILE_SEPARATOR + instruct.getSendPdexRequestID() + APPEND_POSTIVE;
-        break;
-      case FHIRplaceConstants.SENT_PDEX_REQUEST_NOT_OK :
-        if (instruct.getSendPdexRequestID() != null)
-          statusFile = params.getStatusDirectory() + FHIRplaceConstants.FILE_SEPARATOR + instruct.getSendPdexRequestID() + APPEND_NEGATIVE;
-        break;
-      case FHIRplaceConstants.SENT_PDEX_RESOURCE_OK :
-        if (instruct.getSendPdexResourceID() != null)
-          statusFile = params.getStatusDirectory() + FHIRplaceConstants.FILE_SEPARATOR + instruct.getSendPdexResourceID() + APPEND_POSTIVE;
-        break;
-      case FHIRplaceConstants.SENT_PDEX_RESOURCE_NOT_OK :
-        if (instruct.getSendPdexResourceID() != null)
-          statusFile = params.getStatusDirectory() + FHIRplaceConstants.FILE_SEPARATOR + instruct.getSendPdexResourceID() + APPEND_NEGATIVE;
-        break;
-      case FHIRplaceConstants.SENT_PATIENT_REQUEST_OK :
-        if (instruct.getSendPatientRequestID() != null)
-          statusFile = params.getStatusDirectory() + FHIRplaceConstants.FILE_SEPARATOR + instruct.getSendPatientRequestID() + APPEND_POSTIVE;
-        break;
-      case FHIRplaceConstants.SENT_PATIENT_REQUEST_NOT_OK :
-        if (instruct.getSendPatientRequestID() != null)
-          statusFile = params.getStatusDirectory() + FHIRplaceConstants.FILE_SEPARATOR + instruct.getSendPatientRequestID() + APPEND_NEGATIVE;
-        break;        
-      case FHIRplaceConstants.SENT_PATIENT_DATA_OK :
-        if (instruct.getSendPatientDataID() != null)
-          statusFile = params.getStatusDirectory() + FHIRplaceConstants.FILE_SEPARATOR + instruct.getSendPatientDataID() + APPEND_POSTIVE;
-        break;
-      case FHIRplaceConstants.SENT_PATIENT_DATA_NOT_OK :
-        if (instruct.getSendPatientDataID() != null)
-          statusFile = params.getStatusDirectory() + FHIRplaceConstants.FILE_SEPARATOR + instruct.getSendPatientDataID() + APPEND_NEGATIVE;
-        break;      
+        break; 
       case FHIRplaceConstants.RECEIVED_OK:
         if (instruct.getReceiveID() != null)
           statusFile = params.getStatusDirectory() + FHIRplaceConstants.FILE_SEPARATOR + instruct.getReceiveID() + APPEND_POSTIVE;
@@ -292,94 +244,14 @@ public class FHIRplaceUtil {
         if (instruct.getReceiveID() != null)
           statusFile = params.getStatusDirectory() + FHIRplaceConstants.FILE_SEPARATOR + instruct.getReceiveID() + APPEND_NEGATIVE;
         break;
-      case FHIRplaceConstants.RECEIVED_ACCESS_TOKEN_OK :
-        if (instruct.getReceiveAccessTokenID() != null)
-          statusFile = params.getStatusDirectory() + FHIRplaceConstants.FILE_SEPARATOR + instruct.getReceiveAccessTokenID() + APPEND_POSTIVE;
+      case FHIRplaceConstants.VERIFIED_OK :
+        if (instruct.getVerifyID() != null)
+          statusFile = params.getStatusDirectory() + FHIRplaceConstants.FILE_SEPARATOR + instruct.getVerifyID() + APPEND_POSTIVE;
         break;
-      case FHIRplaceConstants.RECEIVED_ACCESS_TOKEN_NOT_OK :
-        if (instruct.getReceiveAccessTokenID() != null)
-          statusFile = params.getStatusDirectory() + FHIRplaceConstants.FILE_SEPARATOR + instruct.getReceiveAccessTokenID() + APPEND_NEGATIVE;
+      case FHIRplaceConstants.VERIFIED_NOT_OK :
+        if (instruct.getVerifyID() != null)
+          statusFile = params.getStatusDirectory() + FHIRplaceConstants.FILE_SEPARATOR + instruct.getVerifyID() + APPEND_NEGATIVE;
         break;
-      case FHIRplaceConstants.RECEIVED_FHIR_ID_OK :
-        if (instruct.getReceiveFhirID() != null)
-          statusFile = params.getStatusDirectory() + FHIRplaceConstants.FILE_SEPARATOR + instruct.getReceiveFhirID() + APPEND_POSTIVE;
-        break;
-      case FHIRplaceConstants.RECEIVED_FHIR_ID_NOT_OK :
-        if (instruct.getReceiveFhirID() != null)
-          statusFile = params.getStatusDirectory() + FHIRplaceConstants.FILE_SEPARATOR + instruct.getReceiveFhirID() + APPEND_NEGATIVE;
-        break;       
-      case FHIRplaceConstants.RECEIVED_PDEX_REQUEST_OK :
-        if (instruct.getReceivePdexRequestID() != null)
-          statusFile = params.getStatusDirectory() + FHIRplaceConstants.FILE_SEPARATOR + instruct.getReceivePdexRequestID() + APPEND_POSTIVE;
-        break;
-      case FHIRplaceConstants.RECEIVED_PDEX_REQUEST_NOT_OK :
-        if (instruct.getReceivePdexRequestID() != null)
-          statusFile = params.getStatusDirectory() + FHIRplaceConstants.FILE_SEPARATOR + instruct.getReceivePdexRequestID() + APPEND_NEGATIVE;
-        break;
-      case FHIRplaceConstants.RECEIVED_PDEX_RESOURCE_OK :
-        if (instruct.getReceivePdexResourceID() != null)
-          statusFile = params.getStatusDirectory() + FHIRplaceConstants.FILE_SEPARATOR + instruct.getReceivePdexResourceID() + APPEND_POSTIVE;
-        break;
-      case FHIRplaceConstants.RECEIVED_PDEX_RESOURCE_NOT_OK :
-        if (instruct.getReceivePdexResourceID() != null)
-          statusFile = params.getStatusDirectory() + FHIRplaceConstants.FILE_SEPARATOR + instruct.getReceivePdexResourceID() + APPEND_NEGATIVE;
-        break;
-      case FHIRplaceConstants.RECEIVED_PATIENT_REQUEST_OK :
-        if (instruct.getReceivePatientRequestID() != null)
-          statusFile = params.getStatusDirectory() + FHIRplaceConstants.FILE_SEPARATOR + instruct.getReceivePatientRequestID() + APPEND_POSTIVE;
-        break;
-      case FHIRplaceConstants.RECEIVED_PATIENT_REQUEST_NOT_OK :
-        if (instruct.getReceivePatientRequestID() != null)
-          statusFile = params.getStatusDirectory() + FHIRplaceConstants.FILE_SEPARATOR + instruct.getReceivePatientRequestID() + APPEND_NEGATIVE;
-        break;
-      case FHIRplaceConstants.RECEIVED_PATIENT_DATA_OK :
-        if (instruct.getReceivePatientDataID() != null)
-          statusFile = params.getStatusDirectory() + FHIRplaceConstants.FILE_SEPARATOR + instruct.getReceivePatientDataID() + APPEND_POSTIVE;
-        break;
-      case FHIRplaceConstants.RECEIVED_PATIENT_DATA_NOT_OK :
-        if (instruct.getReceivePatientDataID() != null)
-          statusFile = params.getStatusDirectory() + FHIRplaceConstants.FILE_SEPARATOR + instruct.getReceivePatientDataID() + APPEND_NEGATIVE;
-        break;
-      case FHIRplaceConstants.ACCESS_TOKEN_VERIFIED_OK :
-        if (instruct.getAccessTokenVerifyID() != null)
-          statusFile = params.getStatusDirectory() + FHIRplaceConstants.FILE_SEPARATOR + instruct.getAccessTokenVerifyID() + APPEND_POSTIVE;
-        break;
-      case FHIRplaceConstants.ACCESS_TOKEN_VERIFIED_NOT_OK :
-        if (instruct.getAccessTokenVerifyID() != null)
-          statusFile = params.getStatusDirectory() + FHIRplaceConstants.FILE_SEPARATOR + instruct.getAccessTokenVerifyID() + APPEND_NEGATIVE;
-        break;
-      case FHIRplaceConstants.CLIENT_ID_VERIFIED_OK :
-        if (instruct.getClientIDVerifyID() != null)
-          statusFile = params.getStatusDirectory() + FHIRplaceConstants.FILE_SEPARATOR + instruct.getClientIDVerifyID() + APPEND_POSTIVE;
-        break;
-      case FHIRplaceConstants.CLIENT_ID_VERIFIED_NOT_OK :
-        if (instruct.getClientIDVerifyID() != null)
-          statusFile = params.getStatusDirectory() + FHIRplaceConstants.FILE_SEPARATOR + instruct.getClientIDVerifyID() + APPEND_NEGATIVE;
-        break;
-      case FHIRplaceConstants.FHIR_ID_VERIFIED_OK :
-        if (instruct.getFhirIDVerifyID() != null)
-          statusFile = params.getStatusDirectory() + FHIRplaceConstants.FILE_SEPARATOR + instruct.getFhirIDVerifyID() + APPEND_POSTIVE;
-        break;
-      case FHIRplaceConstants.FHIR_ID_VERIFIED_NOT_OK :
-        if (instruct.getFhirIDVerifyID() != null)
-          statusFile = params.getStatusDirectory() + FHIRplaceConstants.FILE_SEPARATOR + instruct.getFhirIDVerifyID() + APPEND_NEGATIVE;
-        break;
-      case FHIRplaceConstants.PDEX_RESOURCE_VERIFIED_OK :
-        if (instruct.getPdexResourceVerifyID() != null)
-          statusFile = params.getStatusDirectory() + FHIRplaceConstants.FILE_SEPARATOR + instruct.getPdexResourceVerifyID() + APPEND_POSTIVE;
-        break;
-      case FHIRplaceConstants.PDEX_RESOURCE_VERIFIED_NOT_OK :  
-        if (instruct.getPdexResourceVerifyID() != null)
-          statusFile = params.getStatusDirectory() + FHIRplaceConstants.FILE_SEPARATOR + instruct.getPdexResourceVerifyID() + APPEND_NEGATIVE;
-        break;
-      case FHIRplaceConstants.PATIENT_DATA_VERIFIED_OK :
-        if (instruct.getPatientDataVerifyID() != null)
-          statusFile = params.getStatusDirectory() + FHIRplaceConstants.FILE_SEPARATOR + instruct.getPatientDataVerifyID() + APPEND_POSTIVE;
-        break;
-      case FHIRplaceConstants.PATIENT_DATA_VERIFIED_NOT_OK :
-        if (instruct.getPatientDataVerifyID() != null)
-          statusFile = params.getStatusDirectory() + FHIRplaceConstants.FILE_SEPARATOR + instruct.getPatientDataVerifyID() + APPEND_NEGATIVE;
-        break;        
       case FHIRplaceConstants.RESULTS_OK:
         if (instruct.getEvaluateTestID() != null)
           statusFile = params.getStatusDirectory() + FHIRplaceConstants.FILE_SEPARATOR + instruct.getEvaluateTestID() + APPEND_POSTIVE;

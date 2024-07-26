@@ -19,13 +19,23 @@ public class Transmission {
   String originatorRole = null;
   String recipientRole = null;
   
+  String fhirServer = null;
+  String authServer = null;
+  
+  String clientJwkFileName = null;
+  String clientJwkOwner = null;
+  
   String bundleName = "";
   String bundleType = "";
   String bundleOwner = "";
   
   String patientResourceName = "";
   String patientResourceType = "";
-  String patienrResourceOwner = "";
+  String patientResourceOwner = "";
+  
+  String coverageResourceName = "";
+  String coverageResourceType = "";
+  String coverageResourceOwner = "";
   
   String transactionDate = null;
 
@@ -77,6 +87,30 @@ public class Transmission {
   public String getRecipientRole() {
     return recipientRole;
   }
+  public void setFhirServer(String fhirServer) {
+    this.fhirServer = fhirServer;
+  }
+  public String getFhirServer() {
+    return this.fhirServer;
+  }
+  public void setAuthorizationServer(String authServer) {
+    this.authServer = authServer;
+  }
+  public String getAuthorizationServer() {
+    return this.authServer;
+  }
+  public void setClientJwkFileName(String clientJwkFileName) {
+    this.clientJwkFileName = clientJwkFileName;
+  }
+  public String getClientJwkFileName() {
+    return this.clientJwkFileName;
+  }
+  public void setClientJwkOwner(String clientJwkOwner) {
+    this.clientJwkOwner = clientJwkOwner;
+  }
+  public String getClientJwkOwner() {
+    return this.clientJwkOwner;
+  }
   public String getBundleName() {
     return bundleName;
   }
@@ -96,22 +130,40 @@ public class Transmission {
     this.bundleOwner = bundleOwner;
   }
   public String getPatientResourceName() {
-    return patientResourceName;
+    return this.patientResourceName;
   }
   public void setPatientResourceName(String patientResourceName) {
     this.patientResourceName = patientResourceName;
   }
   public String getPatientResourceType() {
-    return patientResourceType;
+    return this.patientResourceType;
   }
   public void setPatientResourceType(String patientResourceType) {
     this.patientResourceType = patientResourceType;
   }
   public String getPatientResourceOwner() {
-    return patienrResourceOwner;
+    return this.patientResourceOwner;
   }
   public void setPatientResourceOwner(String patienrResourceOwner) {
-    this.patienrResourceOwner = patienrResourceOwner;
+    this.patientResourceOwner = patienrResourceOwner;
+  }
+  public String getCoverageResourceName() {
+    return this.coverageResourceName;
+  }
+  public void setCoverageResourceName(String coverageResourceName) {
+    this.coverageResourceName = coverageResourceName;
+  }
+  public String getCoverageResourceType() {
+    return this.coverageResourceType;
+  }
+  public void setCoverageResourceType(String coverageResourceType) {
+    this.coverageResourceType = coverageResourceType;
+  }
+  public String getCoverageResourceOwner() {
+    return this.coverageResourceOwner;
+  }
+  public void setCoverageResourceOwner(String coverageResourceOwner) {
+    this.coverageResourceOwner = coverageResourceOwner;
   }
 
   public  void setDate() {
@@ -133,19 +185,50 @@ public class Transmission {
              .append(", Role: ").append(this.originatorRole).append("\n")
              .append("Recipient: ").append(this.recipient)
              .append(", Role: ").append(this.recipientRole).append("\n");
-    
-    transData.append("Bundle Name: ").append(this.bundleName).append("\n")
-             .append("Bundle Type: ").append(this.bundleType).append("\n")
-             .append("Bundle Owner: ").append(this.bundleOwner).append("\n");
-    
-    transData.append("Patient Resource Name: ").append(!Strings.isNullOrEmpty(this.patientResourceName) ? this.patientResourceName : "Not set").append("\n")
-             .append("Patient Resource Type: ").append(!Strings.isNullOrEmpty(this.patientResourceType) ? this.patientResourceType : "Not set").append("\n")
-             .append("Patient Resource Owner: ").append(!Strings.isNullOrEmpty(this.patienrResourceOwner) ? this.patienrResourceOwner : "Not set").append("\n");
 
-    // This is set while the test is running
-    //transData.append("Transaction Date: ").append(this.transactionDate)
+    if (!Strings.isNullOrEmpty(this.fhirServer)) {
+      transData.append("FHIR Server: ").append(this.fhirServer).append("\n");
+    }
+    if (!Strings.isNullOrEmpty(this.authServer)) {
+      transData.append("Authorization Server: ").append(this.authServer).append("\n");
+    }
     
-    transData.append("\n\n");
+    if (!Strings.isNullOrEmpty(this.clientJwkFileName)) {
+      transData.append("Client Jwk Filename: ").append(this.clientJwkFileName).append("\n");
+    }
+    if (!Strings.isNullOrEmpty(this.clientJwkOwner)) {
+      transData.append("Client Jwk Owner: ").append(this.clientJwkOwner).append("\n"); 
+    }
+    if (!Strings.isNullOrEmpty(this.bundleName)) {   
+      transData.append("Bundle Name: ").append(this.bundleName).append("\n");
+    }
+    if (!Strings.isNullOrEmpty(this.bundleType)) {
+      transData.append("Bundle Type: ").append(this.bundleType).append("\n");
+    }
+    if (!Strings.isNullOrEmpty(this.bundleOwner)) {
+      transData.append("Bundle Owner: ").append(this.bundleOwner).append("\n");
+    }
+    if (!Strings.isNullOrEmpty(this.patientResourceName)) {
+      transData.append("Patient Resource Name: ").append(this.patientResourceName).append("\n");
+    }
+    if (!Strings.isNullOrEmpty(this.patientResourceType)) {
+      transData.append("Patient Resource Type: ").append(this.patientResourceType).append("\n");
+    }
+    if (!Strings.isNullOrEmpty(this.patientResourceOwner)) {
+      transData.append("Patient Resource Owner: ").append(this.patientResourceOwner).append("\n");
+    }
+    
+    if (!Strings.isNullOrEmpty(this.coverageResourceName)) {
+      transData.append("Coverage Resource Name: ").append(this.coverageResourceName).append("\n");
+    }
+    if (!Strings.isNullOrEmpty(this.coverageResourceType)) {
+      transData.append("Coverage Resource Type: ").append(this.coverageResourceType).append("\n");
+    }
+    if (!Strings.isNullOrEmpty(this.coverageResourceOwner)) {
+      transData.append("Coverage Resource Owner: ").append(this.coverageResourceOwner).append("\n");
+    }
+
+    transData.append("\n");
 
     return transData.toString();
   }

@@ -12,7 +12,7 @@ public class Description {
   String protocol = null;
   String purpose = null;
   String testCase = null;
-  String testCaseType = null;
+  String connectivityType = null;
   String expectedResult = null;
   String testName = null;
   String testPurpose = null;
@@ -59,11 +59,11 @@ public class Description {
   public String getTestCase() {
     return this.testCase;
   }
-  public void setTestCaseType(String testCaseType) {
-    this.testCaseType = testCaseType;
+  public void setConnectivityType(String connectivityType) {
+    this.connectivityType = connectivityType;
   }
-  public String getTestCaseType() {
-    return this.testCaseType;
+  public String getConnectivityType() {
+    return this.connectivityType;
   }
   public void setExpectedResult(String expectedResult) {
     this.expectedResult = expectedResult;
@@ -109,14 +109,14 @@ public class Description {
     
     if (this.testDescription != null)
       descrip.append("Test Description: ").append(this.testDescription).append("\n\n");
-
+  
     descrip.append("TestRequestID: ").append(this.testRequestID).append("\n")
            .append("Version: ").append(this.version).append("\n")
            .append("Protocol: ").append(this.protocol).append("\n")
            .append("Purpose: ").append(this.purpose).append("\n\n");
 
     descrip.append("TestCase: ").append(this.testCase).append("\n")
-           .append("TestCaseType: ").append(this.testCaseType).append("\n")
+           .append("ConnectivityType: ").append(this.connectivityType).append("\n")
            .append("Expected Result: ").append(this.expectedResult).append("\n")
            .append("TestName: ").append(this.testName).append("\n")
            .append("TestPurpose: ").append(this.testPurpose).append("\n")

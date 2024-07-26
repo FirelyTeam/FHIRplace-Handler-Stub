@@ -23,7 +23,7 @@ public class FHIRplaceHandler {
   
   public void start() {
     // Perform any necessary set up here...
-    log.write("Using XML Identifier: " + params.getXMLIdentifier());
+    log.write("Using XML Identifier: " + params.getXMLIdentifier() + "\n");
     
     // Poll the test request directory and process incoming test request messages
     incomingMsgProcessor = new ProcessIncomingMessages(this, params);

@@ -21,30 +21,30 @@ public class Logger {
    */
   public void write(String text) {
     String date = FHIRplaceUtil.getPrettyDate();
-    System.out.println(clazz.getSimpleName() + " --> " + date + " - " + text);
+    System.out.println(date + " (" + clazz.getSimpleName() + "): "  + text);
   }
   
   public void writeStackTrace(Exception ex) {
     String date = FHIRplaceUtil.getPrettyDate();
     String stackTrace = FHIRplaceUtil.getStackTrace(ex);
-    System.out.println(clazz.getSimpleName() + " --> " + date + " - Stack Trace: " + stackTrace);
+    System.out.println(date + " (" + clazz.getSimpleName() + ")\nStack Trace: " + stackTrace);
   }
 
   public void writeStackTrace(Exception ex, String testRequestID) {
     String date = FHIRplaceUtil.getPrettyDate();
     String stackTrace = FHIRplaceUtil.getStackTrace(ex);
-    System.out.println(clazz.getSimpleName() + " --> " + date + " - Stack trace: " + stackTrace + " - ( " + testRequestID + ")");
+    System.out.println(date + " (" + clazz.getSimpleName() + ") - Test Request - " + testRequestID + "\nStack trace: " + stackTrace);
   }
   
   public void writeStackTrace(String description, Exception ex) {
     String date = FHIRplaceUtil.getPrettyDate();
     String stackTrace = FHIRplaceUtil.getStackTrace(ex);
-    System.out.println(clazz.getSimpleName() + " --> " + date + " - " + description + ": " + stackTrace);
+    System.out.println(date + " (" + clazz.getSimpleName() + ") - " + description + ": " + stackTrace);
   }
   
   public void writeStackTrace(String description, Exception ex, String testRequestID) {
     String date = FHIRplaceUtil.getPrettyDate();
     String stackTrace = FHIRplaceUtil.getStackTrace(ex);
-    System.out.println(clazz.getSimpleName() + " --> " + date + " - " + description + ": " + stackTrace + " - ( " + testRequestID + ")");
+    System.out.println(date + " (" + clazz.getSimpleName() + ") - Test Request - " + testRequestID  +  description + ": " + stackTrace);
   }
 }

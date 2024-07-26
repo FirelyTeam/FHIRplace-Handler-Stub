@@ -19,7 +19,7 @@ public class FileUtility {
    * Move the specified file (obtained from the FHIRplace Server) to the archive directory
    * 
    * @param fileName file to move
-   * @param params params object used to get the archive directory
+   * @param params LocalParameters object used to get the archive directory
    * 
    * @throws Exception 
    */

@@ -104,7 +104,7 @@ public class LocalParameters {
     log.write("Status Directory:       " + this.statusDirectory);
     log.write("Archive Directory:      " + this.archiveDirectory);
     log.write("Payload Directory:      " + this.payloadDirectory);
-    log.write("XML Identifier:         " + this.xmlUser);
+    log.write("XML Identifier:         " + this.xmlUser + "\n");
   }
 
   public ConcurrentHashMap getCancelledTestRequests() {

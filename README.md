@@ -1,17 +1,16 @@
 # FHIRplace Handler SDK
 
-This is a stubbed version of FHIRplace Handler to help with the creation of a working FHIRplace Implementation for the FHIRplace Pilot Testing.
+This is a stubbed version of FHIRplace Handler to help with the creation of a working FHIRplace Implementation for use during the FHIRplace Interoperability Testing.
 
-The interactions with the FHIRplace Client have already been coded against the test cases.
+The interactions with the FHIRplace Client have already been coded against all the elements within the current test cases.
 You should only need to add your own FHIR implementation code in the specified sections of the ProcessTestRequest class for each test case.
 
 Please note that there may be some confusion regarding the ProcessTestRequest respondToInitialSendOrReceive() method:
-The test requests require reporting, uploading and sometimes verification of certain pieces of the 
-sending and receiving processes.  In actuality, this is all one step, however pieces of this step need to be 
-extracted and uploaded individually.  To accommodate this, you may record all the parts of your sending
-and receiving (requests and responses) into a container class, including test status, HTTP responses, 
-Access Token values, Member Identifiers, Patient Data, etc., and then extract those values for recording the values 
-identified in the provided stubbed source code and then test your updated code.
+The test requests require reporting, uploading and sometimes verification of certain pieces of the sending and receiving processes.
+In actuality, this is probably done in one step, however pieces of this step need to be extracted and uploaded individually.
+To accommodate this, you may record all the parts of your sending and receiving (requests and responses) into a container class,
+including any test statuses, HTTP responses, Access Token values, Member Identifiers, Patient Data, etc., and then extract those 
+values for recording the values identified in the provided stubbed source code and then test your updated code.
 
 
 ## Building the code
@@ -25,7 +24,7 @@ You may remove this version number for ease of execution.
 
 ## Running the executable
 
-Copy the FHIRplace-Handler jar to the same directory where you are running the FHIRplace Client.  This is necessary because it will need access to the fhirplace-clientconfig.properties file created and used by the FHIRplace Client.  
+Copy the FHIRplace-Handler jar to the same directory where you are running the FHIRplace Client.  This is necessary because it will need access to the fhirplace-clientconfig.properties file created and used by the FHIRplace Client (i.e., the configured directories and your Participant identifier).  
 
 The FHIRplace-Handler jar has the following dependencies:
  - guava-11.0.2.jar

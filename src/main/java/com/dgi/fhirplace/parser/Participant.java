@@ -57,7 +57,7 @@ public class Participant {
     partString.append("Name: ").append(this.name).append("\n");
     partString.append("Product: ").append(this.product).append("\n");
     partString.append("Version: " ).append(this.version).append("\n");
-    partString.append("FHIR Version: " ).append(this.fhirVersion).append("\n\n");
+    partString.append("FHIR Version: " ).append(this.fhirVersion).append("\n");
 
     return partString.toString();
   }

@@ -19,7 +19,7 @@ import java.io.File;
  *   - sends the ACK/NAK messages to the FHIRplace server
  *   - sets up to run the test 
  *   - parses the results
- *   - uploads the status and any other required uploads to the FHIRplace server
+ *   - uploads the status and any other required data to the FHIRplace server
  */
 public class ProcessTestRequest extends Thread {
 
@@ -41,7 +41,9 @@ public class ProcessTestRequest extends Thread {
   String partner = null;
   
   // This setting is used for testing that sent/receive upload
-  // mismatches are detected properly
+  // mismatches are detected properly 
+
+  // Note: This is not used for the "Happy Path" tests.
   boolean generateMismatchErrors = false;
   
   public ProcessTestRequest(FHIRplaceHandler handler, LocalParameters params, String requestFileName) {
@@ -51,6 +53,29 @@ public class ProcessTestRequest extends Thread {
     this.requestFileName = requestFileName;
 
     this.fileUtility = new FileUtility();
+  }
+  
+  /**
+   * Parses the FHIRplace test request into separate objects (i.e., Participant,
+   * Transmission, Description and Instruction
+   * @return
+   * @throws Exception 
+   */
+  private boolean parseTestRequest() throws Exception {
+
+    File path = new File(this.requestFileName);
+    
+    // Parse the XML file
+    this.xml = new FHIRplaceXML();
+    new ParseTestRequest( path, xml, params );
+   
+    // Extract the objects from the FHIRplaceXML container
+    desc = xml.getDescription();
+    parts = xml.getParticipant();
+    trans = xml.getTransmission();
+    instruct = xml.getInstructions();   
+
+    return true;
   }
   
   @Override
@@ -69,7 +94,7 @@ public class ProcessTestRequest extends Thread {
       String testRequestID = this.desc.getTestRequestID();
       String testCase = this.desc.getTestCase();
       String purpose = this.desc.getPurpose();
-      String testCaseType = this.desc.getTestCaseType();
+      String connectivityType = this.desc.getConnectivityType();
 
       // Make sure there isn't already another running test for a different test case for this trading partner            
       String tp = FHIRplaceUtil.getTP(trans, params);
@@ -87,132 +112,96 @@ public class ProcessTestRequest extends Thread {
         log.write("Description: " + this.desc.getTestDescription() + " (" + testRequestID + ")");
       }
       
+      // If there is a Connectivity Type, log it
+      if (!Strings.isNullOrEmpty(connectivityType)) {
+        log.write("Connectivity Type: " + connectivityType + " (" + testRequestID + ")");
+      }
+      
       // Send the ACK that the FHIRPlace Message was successfully parsed and we're ready to start the test
       String ackMessage = "Sent ACK for " + purpose;
       FHIRplaceUtil.sendStatus(FHIRplaceConstants.ACK, this.requestFileName, this.instruct, this.trans, this.params, ackMessage);
       log.write(ackMessage  + " (" + testRequestID + ")");
 
-      // Perform necessary test set up and send/receive here
+      // Perform necessary test set up and send/receive the message
       if (!params.getCancelledTestRequest() &&
           !params.isCancelledTestRequest(testRequestID) &&
           purpose.equalsIgnoreCase("TestRequest")) {
 
-        String expectedResult = desc.getExpectedResult();
+        // Get expected result.  If it isn't present, default it to "Success"
+        String expectedResult = desc.getExpectedResult() != null ? desc.getExpectedResult() : FHIRplaceConstants.SUCCESS;
         boolean success = expectedResult.equalsIgnoreCase(FHIRplaceConstants.SUCCESS);
         String statusMsg = "";
         int statusType;
          
         // This is the initial send/receive as specified in the test requests
         boolean sending = FHIRplaceUtil.isSending(this.trans, this.params);
-        if (sending) {
-          log.write("Preparing to send " + testCaseType + " transmission for Test Case " + testCase +
+        if (sending) {  
+          // Note:  This is the Client (New Payer) sending to the Server (Old Payer)
+          
+          // Trigger off the send Data Type to determine what you are going to send
+          String sendDataType = instruct.getSendDataType();
+          log.write("Preparing to send " + sendDataType + " transmission for Test Case " + testCase +
                     " to " + FHIRplaceUtil.getTP(this.trans, this.params) + " (" + testRequestID + ")");
 
 // **** Put your connection to partner code here ***
 
           // Check for the HTTP status of your send to determine if the transfer 
           // was a success or not (override the success boolean if unsuccessful)
+          
+          // Report the result of the initial transmission
+          statusMsg =  success ? "Successfully sent " + sendDataType + " to " + FHIRplaceUtil.getTP(trans, params) :
+                                 "Error sending " + sendDataType + " to " + FHIRplaceUtil.getTP(trans, params);
+
+          statusType = success ? FHIRplaceConstants.SENT_OK : FHIRplaceConstants.SENT_NOT_OK;
+
+          FHIRplaceUtil.sendStatus(statusType, requestFileName, this.instruct, this.trans, this.params, statusMsg);          
 
           initialSendOrReceiveError = !success;
-          
-          switch(testCaseType) {
-            case FHIRplaceConstants.CONNECTION :              // 'Establish' and 'Complete' test cases
-            case FHIRplaceConstants.CLIENT_ID_MISMATCH :      // Authenticate_1 test case
-            case FHIRplaceConstants.EXPIRED_ACCESS_TOKEN :    // Authenticate_2 test case  
-            {  
-              statusMsg =  success ? "Successfully SENT initial transmission to " + FHIRplaceUtil.getTP(trans, params) :
-                                     "Error sending initial transmission to " + FHIRplaceUtil.getTP(trans, params);
-            
-              statusType = success ? FHIRplaceConstants.SENT_OK : FHIRplaceConstants.SENT_NOT_OK;
 
-              FHIRplaceUtil.sendStatus(statusType, requestFileName, this.instruct, this.trans, this.params, statusMsg);
+          // Also upload sent data for the send data types indicated below
+          switch(sendDataType) {
+            case FHIRplaceConstants.REGISTRATION_TYPE :
+              // Nothing to upload yet for this data type
               break;
-            }
-            
-            case FHIRplaceConstants.MEMBER_AUTH :            // 'Single Member' test case
-            {  
-              statusMsg = success ? "Successfully sent Member Identifier" :
-                                    "Did not successfully send Member Identifier";
 
-              statusType = success ? FHIRplaceConstants.SENT_FHIR_ID_OK :
-                                     FHIRplaceConstants.SENT_FHIR_ID_NOT_OK;
-
-              FHIRplaceUtil.sendStatus(statusType, requestFileName, this.instruct, this.trans, this.params, statusMsg);
+            case FHIRplaceConstants.ACCESS_REQUEST_TYPE :
+              // Nothing to upload yet for this data type
               break;
-            }
             
-            case FHIRplaceConstants.PDEX_DEVICE :
-            case FHIRplaceConstants.PDEX_MEDICATION :
-            case FHIRplaceConstants.PDEX_PROVENANCE :
-            {
-              statusMsg = success ? "Successfully sent PDEX Request" :
-                                    "Did not successfully send PDEX Request";
-              
-              statusType = success ? FHIRplaceConstants.SENT_PDEX_REQUEST_OK :
-                                     FHIRplaceConstants.SENT_PDEX_REQUEST_NOT_OK;
- 
-              FHIRplaceUtil.sendStatus(statusType, requestFileName, this.instruct, this.trans, this.params, statusMsg);
+            case FHIRplaceConstants.MEMBER_MATCH_TYPE :
+              // Nothing to upload yet for this data type
               break;
-            }
             
-            case FHIRplaceConstants.PATIENT_ALL :
-            case FHIRplaceConstants.PATIENT_NS :
-            {  
-              statusMsg = success ? "Successfully sent Patient Request" :
-                                    "Did not successfully send Patient Request";
-              statusType = success ? FHIRplaceConstants.SENT_PATIENT_REQUEST_OK : 
-                                     FHIRplaceConstants.SENT_PATIENT_REQUEST_NOT_OK;
-              
-              FHIRplaceUtil.sendStatus(statusType, requestFileName, this.instruct, this.trans, this.params, statusMsg);                 
-              break;
-            } 
-          }
- 
-          // Also upload sent data where indicated
-          switch (testCaseType) {
-            case FHIRplaceConstants.CLIENT_ID_MISMATCH :      // Authenticate_1 test case
-            {
-              // Upload Client ID
-              String clientID = "Some Client ID";
-              uploadSentData(testRequestID, FHIRplaceConstants.CLIENT_ID_DATA, clientID);
-              break;
-            }  
-            case FHIRplaceConstants.EXPIRED_ACCESS_TOKEN :    // Authenticate_2 test case 
-            {
-              // Upload transported headers and metadata
-              String headersAndMetaData = "Sent headers and metadata";
-              uploadSentData(testRequestID, FHIRplaceConstants.TRANSPORT_DATA, headersAndMetaData);
-              break;
-            }
-            case FHIRplaceConstants.PDEX_DEVICE :
-            case FHIRplaceConstants.PDEX_MEDICATION :
-            case FHIRplaceConstants.PDEX_PROVENANCE :
-            case FHIRplaceConstants.PATIENT_ALL :
-            case FHIRplaceConstants.PATIENT_NS :
-            {
-              // Upload Access-Token
-              String accessToken = "123456789";
-              FHIRplaceUtil.sendStatus(FHIRplaceConstants.SENT_ACCESS_TOKEN_OK, requestFileName, this.instruct, this.trans, this.params, statusMsg);
-              uploadSentData(testRequestID, FHIRplaceConstants.ACCESS_TOKEN_DATA, accessToken);
-              break;
-            }
-            case FHIRplaceConstants.MEMBER_AUTH :
-            {
-              // Upload FHIR-ID
-              String fhirID = "ABCDEFGHI";
-              FHIRplaceUtil.sendStatus(FHIRplaceConstants.SENT_FHIR_ID_OK, requestFileName, this.instruct, this.trans, this.params, statusMsg);
+            case FHIRplaceConstants.FHIR_ID_TYPE :
+              // Upload the FHIR-ID that was sent
+              String fhirID = "ABCDEFGHIJKLMNOP";
               uploadSentData(testRequestID, FHIRplaceConstants.FHIR_ID_DATA, fhirID);              
               break;
-            }
+            
+            case FHIRplaceConstants.PATIENT_REQUEST_TYPE :
+              // Upload the Access-Token
+              String accessToken = "123456789";
+              uploadSentData(testRequestID, FHIRplaceConstants.ACCESS_TOKEN_DATA, accessToken);
+              break;
           }
+
+          // Log the result of the sent status
+          log.write(statusMsg + " - (" + this.desc.getTestRequestID() + ")");
+
           
-        // Receiving
-        } else {         
-          log.write("Waiting to receive initial transmission for Test Case " + testCase +
+        // Receiving - This is the Server (Old Payer) receiving from the Client (New Payer)
+        } else {
+
+          String receiveDataType = instruct.getReceiveDataType();
+          
+          log.write("Waiting to receive " + receiveDataType + " for Test Case " + testCase + 
                      " from " + FHIRplaceUtil.getTP(this.trans, this.params) + " (" + testRequestID + ")" );
 
 // **** Put connection receiving code here ***
 
+          // When receiving, trigger off the receiveDataType value
+          log.write("The received data type is: " + receiveDataType);
+                     
           // Determine if the initial receive was a success or not or fake it 
           // as a failure for the test cases expecting an error result
           // Simulate a failure for the Failure-type tests
@@ -220,174 +209,82 @@ public class ProcessTestRequest extends Thread {
           if (expectedResult.equals(FHIRplaceConstants.FAILURE))
             success = false;
           
+          // Report the result of the initial transmission
+          statusMsg  = success ? "Successfully received " + receiveDataType + " from " + FHIRplaceUtil.getTP(trans, params) :
+                                 "Error receiving " + receiveDataType + " from " + FHIRplaceUtil.getTP(trans, params);
+          
+          statusType = success ? FHIRplaceConstants.RECEIVED_OK : FHIRplaceConstants.RECEIVED_NOT_OK;
+          FHIRplaceUtil.sendStatus(statusType, requestFileName, this.instruct, this.trans, this.params, statusMsg);
+        
           initialSendOrReceiveError = !success;
 
-         switch(testCaseType) {
-            case FHIRplaceConstants.CONNECTION :               // 'Establish' and 'Complete' test cases
-            case FHIRplaceConstants.CLIENT_ID_MISMATCH :       // Authenticate_1 test case
-            case FHIRplaceConstants.EXPIRED_ACCESS_TOKEN :     // Authenticate_2 test case
-            {  
-              // Test Case Establish and Complete
-              statusMsg  = success ? "Successfully RECEIVED initial transmission from " + FHIRplaceUtil.getTP(trans, params) :
-                                     "Error receiving initial transmission from " + FHIRplaceUtil.getTP(trans, params);
+          // Also upload received data where indicated
+          switch(receiveDataType) {
+            case FHIRplaceConstants.REGISTRATION_TYPE :
+              // Nothing to upload yet for this data type
+              break;
             
-              statusType = success ? FHIRplaceConstants.RECEIVED_OK : FHIRplaceConstants.RECEIVED_NOT_OK;
-              FHIRplaceUtil.sendStatus(statusType, requestFileName, this.instruct, this.trans, this.params, statusMsg);              
+            case FHIRplaceConstants.ACCESS_REQUEST_TYPE :
+              // Nothing to upload yet for this data type
               break;
-            }
-            case FHIRplaceConstants.MEMBER_AUTH :
-            {
-              statusMsg = success ? "Successfully received Member Identifier" :
-                                  "Did not successfully receive Member Identifier";
-              
-              statusType = success ? FHIRplaceConstants.RECEIVED_FHIR_ID_OK :
-                                     FHIRplaceConstants.RECEIVED_FHIR_ID_NOT_OK;
-              
-              FHIRplaceUtil.sendStatus(statusType, requestFileName, this.instruct, this.trans, this.params, statusMsg);
-              break;
-            }
-
-            case FHIRplaceConstants.PDEX_DEVICE :
-            case FHIRplaceConstants.PDEX_MEDICATION :
-            case FHIRplaceConstants.PDEX_PROVENANCE :
-            {
-              statusMsg = success ? "Successfully received PDEX Request" :
-                                    "Did not successfully receive PDEX Request";
-              
-              statusType = success ? FHIRplaceConstants.RECEIVED_PDEX_REQUEST_OK :
-                                     FHIRplaceConstants.RECEIVED_PDEX_REQUEST_NOT_OK;
- 
-              FHIRplaceUtil.sendStatus(statusType, requestFileName, this.instruct, this.trans, this.params, statusMsg);
-              break;
-            }
             
-            case FHIRplaceConstants.PATIENT_ALL :
-            case FHIRplaceConstants.PATIENT_NS :
-            {
-              statusMsg = success ? "Successfully received Patient Request" :
-                                    "Did not successfully receive Patient Request";
-              
-              statusType = success ? FHIRplaceConstants.RECEIVED_PATIENT_REQUEST_OK : 
-                                     FHIRplaceConstants.RECEIVED_PATIENT_REQUEST_NOT_OK;
-              
-              FHIRplaceUtil.sendStatus(statusType, requestFileName, this.instruct, this.trans, this.params, statusMsg); 
+            case FHIRplaceConstants.MEMBER_MATCH_TYPE :
+              // Nothing to upload yet for this data type
               break;
-            }
-          }
-         
-          // Also upload received data and verify where indicated
-          switch(testCaseType) {
-            case FHIRplaceConstants.CONNECTION :   
-            {
-              // Don't need to do anything
-              break;
-            }
             
-            case FHIRplaceConstants.CLIENT_ID_MISMATCH :      // Authenticate_1
-            {
-              // Upload Client ID
-              String clientID = "A Different Client ID";
-              statusMsg = "Client ID Mismatch";
-              uploadReceivedData(testRequestID, FHIRplaceConstants.CLIENT_ID_DATA, clientID, statusMsg);
-
-              // Verify whether the FHIR_ID is OK or not..     
-              statusType = success ? FHIRplaceConstants.CLIENT_ID_VERIFIED_OK : 
-                                     FHIRplaceConstants.CLIENT_ID_VERIFIED_NOT_OK;
-
-              FHIRplaceUtil.sendStatus(statusType, requestFileName, this.instruct, this.trans, this.params, statusMsg);              
-              break;
-            }
-            
-            case FHIRplaceConstants.EXPIRED_ACCESS_TOKEN :    // Authenticate_2 test case 
-            {
-              // Upload transported headers and metadata
-              String headersAndMetaData = "Received headers and metadata";
-              statusMsg = "Expired Access Token";
-              uploadReceivedData(testRequestID, FHIRplaceConstants.TRANSPORT_DATA, headersAndMetaData, statusMsg);
-              
-               // Verify whether the Access Token is OK or not.. 
-              statusType = success ? FHIRplaceConstants.ACCESS_TOKEN_VERIFIED_OK : 
-                                     FHIRplaceConstants.ACCESS_TOKEN_VERIFIED_NOT_OK;
-
-              FHIRplaceUtil.sendStatus(statusType, requestFileName, this.instruct, this.trans, this.params, statusMsg);
-              break;
-            }
-            
-            case FHIRplaceConstants.MEMBER_AUTH :            // Single_Member test case
-            {
+            case FHIRplaceConstants.FHIR_ID_TYPE :
               // Upload FHIR-ID
-              String fhirID = generateMismatchErrors ? "ABCDEFG" : "ABCDEFGHI";
-              
-              statusMsg = success ? "Successfully received Member Identifier" :
-                                    "Did not successfully receive Member Identifier"; 
-             
+              String fhirID = generateMismatchErrors ? "ABCDEFG" : "ABCDEFGHIJKLMNOP";
               uploadReceivedData(testRequestID, FHIRplaceConstants.FHIR_ID_DATA, fhirID, statusMsg);
               
-              // Verify whether the FHIR_ID is OK or not.. 
-              statusMsg =  success ? "Successfully validated the FHIR-ID" : 
-                                     "FHIR-ID was invalid";        
-              statusType = success ? FHIRplaceConstants.FHIR_ID_VERIFIED_OK : 
-                                     FHIRplaceConstants.FHIR_ID_VERIFIED_NOT_OK;
-
+              // Verify the FHIR-ID
+              statusMsg =  success ? "Successfully validated the FHIR-ID" : "FHIR-ID was invalid";        
+              statusType = success ? FHIRplaceConstants.VERIFIED_OK : FHIRplaceConstants.VERIFIED_NOT_OK;
               FHIRplaceUtil.sendStatus(statusType, requestFileName, this.instruct, this.trans, this.params, statusMsg);
-              
               break;
-            }
-
-            case FHIRplaceConstants.PDEX_DEVICE :
-            case FHIRplaceConstants.PDEX_MEDICATION :
-            case FHIRplaceConstants.PDEX_PROVENANCE :
-            case FHIRplaceConstants.PATIENT_ALL :
-            case FHIRplaceConstants.PATIENT_NS :
-            {
-              // Upload Access-Token
+            
+            case FHIRplaceConstants.PATIENT_REQUEST_TYPE :
+              // Upload the Access Token
               String accessToken = generateMismatchErrors ? "1234567890" : "123456789";
-              
-              statusMsg = success ? "Successfully received Access Token" :
-                                    "Did not successfully receive Access Token";
-              
               uploadReceivedData(testRequestID, FHIRplaceConstants.ACCESS_TOKEN_DATA, accessToken, statusMsg);
               
               // Verify whether the Access Token is OK or not.. 
-              statusMsg =  success ? "Access Token is valid" : 
-                                     "Access Token is invalid";        
-              statusType = success ? FHIRplaceConstants.ACCESS_TOKEN_VERIFIED_OK : 
-                                     FHIRplaceConstants.ACCESS_TOKEN_VERIFIED_NOT_OK;
-
-              FHIRplaceUtil.sendStatus(statusType, requestFileName, this.instruct, this.trans, this.params, statusMsg);
-              
-              break;
-            }
+              statusMsg =  success ? "Access Token is valid" : "Access Token is invalid";        
+              statusType = success ? FHIRplaceConstants.VERIFIED_OK : FHIRplaceConstants.VERIFIED_NOT_OK;
+              FHIRplaceUtil.sendStatus(statusType, requestFileName, this.instruct, this.trans, this.params, statusMsg);              
+              break;            
           }
+
+          // Log the result of the received status
           log.write(statusMsg + " - (" + this.desc.getTestRequestID() + ")");
         }
 
         if (initialSendOrReceiveError) {
           // If there was an error, negatively evaluate the test
           FHIRplaceUtil.sendStatus(FHIRplaceConstants.RESULTS_NOT_OK, this.requestFileName, 
-                              this.instruct, this.trans, this.params, statusMsg);
+                                   this.instruct, this.trans, this.params, statusMsg);
           log.write("Test status(" + FHIRplaceUtil.getTP(trans, params) + "): FAILURE - " + statusMsg + " - (" +
                      this.desc.getTestRequestID() + ")");
-
         }
 
         // Update the transaction date in the Transmission class
         trans.setDate();
-      }
 
-      // If a CancelRequest, add this request to the cancelled request table
-      // and attempt to stop the processing of this message
-      if ((params.getCancelledTestRequest() && params.isCancelledTestRequest(testRequestID)) ||
-           purpose.equalsIgnoreCase("CancelRequest")) {
-        String messageText = "Request (" + testRequestID + ") cancelled by user";
-        log.write(messageText);
+      } else {
+        // If a CancelRequest, add this request to the cancelled request table
+        // and attempt to stop the processing of this message
+        if ((params.getCancelledTestRequest() && params.isCancelledTestRequest(testRequestID)) ||
+             purpose.equalsIgnoreCase("CancelRequest")) {
+          String messageText = "Request (" + testRequestID + ") cancelled by user";
+          log.write(messageText);
 
-        if (!params.getCancelledTestRequests().containsKey(testRequestID))
-          params.addCancelledTestRequest(testRequestID);
+          if (!params.getCancelledTestRequests().containsKey(testRequestID))
+            params.addCancelledTestRequest(testRequestID);
 
-        // Negatively evaluate this request
-        FHIRplaceUtil.sendStatus(FHIRplaceConstants.RESULTS_NOT_OK, this.requestFileName, 
-                              this.instruct, this.trans, this.params, messageText);
+          // Negatively evaluate this request
+          FHIRplaceUtil.sendStatus(FHIRplaceConstants.RESULTS_NOT_OK, this.requestFileName, 
+                                this.instruct, this.trans, this.params, messageText);
+        }
       }
 
     } catch(Exception ex) {
@@ -430,7 +327,7 @@ public class ProcessTestRequest extends Thread {
 
     if (parseSuccess & !handlerError && !initialSendOrReceiveError) {
       try {
-        // Respond to the initial send with a receive and to the receive with a send
+        // Respond to the initial send with a response or receive a response from the initial send
         this.respondToInitialSendOrReceive();
       } catch (Exception e) {
         String errMsg = "Error parsing results file and updating status: " + e.getMessage();
@@ -490,29 +387,6 @@ public class ProcessTestRequest extends Thread {
   }
 
   /**
-   * Parses the FHIRplace test request into separate objects (i.e., Participant,
-   * Transmission, Description and Instruction
-   * @return
-   * @throws Exception 
-   */
-  private boolean parseTestRequest() throws Exception {
-
-    File path = new File(this.requestFileName);
-    
-    // Parse the XML file
-    this.xml = new FHIRplaceXML();
-    new ParseTestRequest( path, xml, params );
-   
-    // Extract the objects from the FHIRplaceXML container
-    desc = xml.getDescription();
-    parts = xml.getParticipant();
-    trans = xml.getTransmission();
-    instruct = xml.getInstructions();   
-
-    return true;
-  }
-
-  /**
    * Perform the second set of Send/Receive commands 
    * where the initial receiver (Old Payer) responds 
    * to the initial sender (New Payer) with additional data
@@ -529,7 +403,6 @@ public class ProcessTestRequest extends Thread {
     if (FHIRplaceUtil.isSending(trans, params))
       originallySending = true;
 
-    String testCaseType = this.desc.getTestCaseType();
     String testRequestID = this.desc.getTestRequestID();
 
     boolean success = true;
@@ -540,142 +413,124 @@ public class ProcessTestRequest extends Thread {
     String statusMsg;
     int statusType;
     
-    // Original receiver responds to the first part of the message 
-    // and now becomes the "sender"...
+    // This is the Server (Old Payer) responding to the request from the Client (New Payer)
     
     if (!originallySending) {
+ 
+      String sendDataType = instruct.getSendDataType();
+      log.write("Returning a " + sendDataType + " response...");
       
-      switch (testCaseType) {
+ // *** Put your response to the initial send here
+    
+      // Report the result of that response
+      statusMsg =  success ? "Successfully sent " + sendDataType + " response to " + FHIRplaceUtil.getTP(trans, params) :
+                             "Error sending " + sendDataType + " response to " + FHIRplaceUtil.getTP(trans, params);
+      statusType = success ? FHIRplaceConstants.SENT_OK : FHIRplaceConstants.SENT_NOT_OK;
+      FHIRplaceUtil.sendStatus(statusType, requestFileName, this.instruct, this.trans, this.params, statusMsg);
+      
+      // Upload the content that was sent with the response
+      switch (sendDataType) {
+        case FHIRplaceConstants.CLIENT_ID_TYPE :
+          // Upload Client ID
+          String clientID = "Some Client ID";
+          uploadSentData(testRequestID, FHIRplaceConstants.CLIENT_ID_DATA, clientID);
+          break;
         
-        case FHIRplaceConstants.CONNECTION :   // 'Complete' test case
-        {
-          // Send, report and upload the Access Token
+        case FHIRplaceConstants.ACCESS_TOKEN_TYPE :
           String accessToken = generateMismatchErrors ? "1234567890" : "123456789";
-
-          statusMsg = success ? "Successfully returned Access Token" :
-                                "Did not successfully return Access Token";         
-          statusType = success ? FHIRplaceConstants.SENT_ACCESS_TOKEN_OK :
-                                 FHIRplaceConstants.SENT_ACCESS_TOKEN_NOT_OK;
-
-          FHIRplaceUtil.sendStatus(statusType, requestFileName, this.instruct, this.trans, this.params, statusMsg);
           uploadSentData(testRequestID, FHIRplaceConstants.ACCESS_TOKEN_DATA, accessToken);
-          
           break;
-        }
-
-        case FHIRplaceConstants.MEMBER_AUTH :          // Single_Member test case
-        {
-          // Send, report and upload the Access Token
-          String accessToken = generateMismatchErrors ? "9876543210" : "987654321";
-
-          statusMsg = success ? "Successfully sent Access Token" :
-                                "Did not successfully send Access Token";
-          statusType = success ? FHIRplaceConstants.SENT_ACCESS_TOKEN_OK :
-                                 FHIRplaceConstants.SENT_ACCESS_TOKEN_NOT_OK;
-          FHIRplaceUtil.sendStatus(statusType, requestFileName, this.instruct, this.trans, this.params, statusMsg);
-
-          uploadSentData(testRequestID, FHIRplaceConstants.ACCESS_TOKEN_DATA, accessToken);
           
+        case FHIRplaceConstants.FHIR_ID_TYPE :
+          String fhirID = "ABCDEFGHIJKLMNOP";
+          uploadSentData(testRequestID, FHIRplaceConstants.FHIR_ID_DATA, fhirID);           
           break;
-        }
-
-        case FHIRplaceConstants.PDEX_DEVICE :
-        case FHIRplaceConstants.PDEX_MEDICATION :
-        case FHIRplaceConstants.PDEX_PROVENANCE :
-        {
-          // Return PDEX Resource, report and upload the transport data (headers and metadata)
-          statusMsg = success ? "Successfully returned PDEX Resource" :
-                                "Did not successfully return PDEX Resource";         
-          statusType = success ? FHIRplaceConstants.SENT_PDEX_RESOURCE_OK :
-                                 FHIRplaceConstants.SENT_PDEX_RESOURCE_NOT_OK;
-          FHIRplaceUtil.sendStatus(statusType, requestFileName, this.instruct, this.trans, this.params, statusMsg);
           
+        case FHIRplaceConstants.PATIENT_DATA_TYPE :
+          // Upload the transported headers and metadata in response
           String headersAndMetaData = "Sent headers and metadata";
           uploadSentData(testRequestID, FHIRplaceConstants.TRANSPORT_DATA, headersAndMetaData);
-          
           break;
-        }
-
-        case FHIRplaceConstants.PATIENT_ALL :
-        case FHIRplaceConstants.PATIENT_NS :
-        {
-          // Send, report and upload the Patient Data
-          // For Patient_All this is all the data 
-          // For Patient_NS this is just the non-sensitive data
-
-          statusMsg = success ? "Successfully sent the Patient Data" :
-                                "Did not successfully send the Patient Data";         
-          statusType = success ? FHIRplaceConstants.SENT_PATIENT_DATA_OK:
-                                 FHIRplaceConstants.SENT_PATIENT_DATA_NOT_OK;
-          FHIRplaceUtil.sendStatus(statusType, requestFileName, this.instruct, this.trans, this.params, statusMsg);
-          
-          // Upload the transported headers and metadata
-          String headersAndMetaData = "Sent headers and metadata";
-          uploadSentData(testRequestID, FHIRplaceConstants.TRANSPORT_DATA, headersAndMetaData);
-         
-          break;
-        }       
       }
+          
+    //  This is the Client (New Payer) receiving the responce from the Server (Old Payer)
+
+    } else {  
+      String receiveDataType = instruct.getReceiveDataType();
+      log.write("Receiveing a " + receiveDataType + " response...");
+
+  // **** Here's where you will either add code to receive the response or extract
+  //      the result of the response from your initial message      
+
+      // Report the result of the received response
+      statusMsg  = success ? "Successfully received " + receiveDataType + " response from " + FHIRplaceUtil.getTP(trans, params) :
+                             "Error receiving " + receiveDataType + " response from " + FHIRplaceUtil.getTP(trans, params);
+          
+      statusType = success ? FHIRplaceConstants.RECEIVED_OK : FHIRplaceConstants.RECEIVED_NOT_OK;
+      FHIRplaceUtil.sendStatus(statusType, requestFileName, this.instruct, this.trans, this.params, statusMsg);
       
-    } else {
-      // Original sender becomes the receiver of the response
-      statusMsg = "";
-      
-      switch (testCaseType) {
-        // Test Case 
-        case FHIRplaceConstants.CONNECTION :
-        case FHIRplaceConstants.MEMBER_AUTH :
+      switch (receiveDataType) {
+        case FHIRplaceConstants.CLIENT_ID_TYPE :
         {
-          // Receive, report, upload and verify the Access Token
-          String accessToken = testCaseType.equalsIgnoreCase(FHIRplaceConstants.CONNECTION) ? "123456789" : "987654321";
+          // Upload Client ID
+          String clientID = "Some Client ID";
+          uploadReceivedData(testRequestID, FHIRplaceConstants.CLIENT_ID_DATA, clientID, statusMsg);
 
-          statusMsg = success ? "Successfully received Access Token" :
-                                "Did not successfully receive Access Token";
-          statusType = success ? FHIRplaceConstants.RECEIVED_ACCESS_TOKEN_OK :
-                                 FHIRplaceConstants.RECEIVED_ACCESS_TOKEN_NOT_OK;
+          // Verify whether the client ID is OK or not
+          statusMsg =  success ? "Client ID is valid" : "Client ID is invalid";        
+          statusType = success ? FHIRplaceConstants.VERIFIED_OK : FHIRplaceConstants.VERIFIED_NOT_OK;
           FHIRplaceUtil.sendStatus(statusType, requestFileName, this.instruct, this.trans, this.params, statusMsg);
-
+          
+          verificationError = !success;
+          if (verificationError) {
+            verificationErrorMsg = statusMsg;
+          }
+          break;
+        }
+        
+        case FHIRplaceConstants.ACCESS_TOKEN_TYPE :
+        {
+          String accessToken = "123456789";
           uploadReceivedData(testRequestID, FHIRplaceConstants.ACCESS_TOKEN_DATA, accessToken, statusMsg);
           
+          // Verify whether the access token is OK or not
+          statusMsg =  success ? "Successfully validated the Access Token" : "Access Token was invalid";        
+          statusType = success ? FHIRplaceConstants.VERIFIED_OK : FHIRplaceConstants.VERIFIED_NOT_OK;
+          FHIRplaceUtil.sendStatus(statusType, requestFileName, this.instruct, this.trans, this.params, statusMsg);
+
+          verificationError = !success;
+          if (verificationError) {
+            verificationErrorMsg = statusMsg;
+          }          
+          break;
+        }
+
+        case FHIRplaceConstants.FHIR_ID_TYPE :
+        {
+          String fhirID = "ABCDEFGHIJKLMNOP";
+          uploadReceivedData(testRequestID, FHIRplaceConstants.FHIR_ID_DATA, fhirID, statusMsg);
           
-          // Validate whether the access token is OK or not.. 
-          statusMsg =  success ? "Successfully validated the Access Token" : 
-                                 "Access Token was invalid";        
-          statusType = success ? FHIRplaceConstants.ACCESS_TOKEN_VERIFIED_OK : 
-                                 FHIRplaceConstants.ACCESS_TOKEN_VERIFIED_NOT_OK;
-          
+          // Validate whether the FHIR-ID (Member ID) is OK or not
+          statusMsg =  success ? "Successfully validated the Member ID" : "Member ID was invalid";        
+          statusType = success ? FHIRplaceConstants.VERIFIED_OK : FHIRplaceConstants.VERIFIED_NOT_OK;
           FHIRplaceUtil.sendStatus(statusType, requestFileName, this.instruct, this.trans, this.params, statusMsg);
           
           verificationError = !success;
           if (verificationError) {
             verificationErrorMsg = statusMsg;
           }
-
           break;
         }
-         
-        case FHIRplaceConstants.PDEX_DEVICE :
-        case FHIRplaceConstants.PDEX_MEDICATION :
-        case FHIRplaceConstants.PDEX_PROVENANCE :
+
+        case FHIRplaceConstants.PATIENT_DATA_TYPE :
         {
-          // Receive PDEX Resource, report and upload the transport data (headers and metadata) 
-          // and verify the resource data
-          
-          statusMsg = success ? "Successfully received PDEX Resource" :
-                                "Did not successfully receive PDEX Resource";
-          
-          statusType = success ? FHIRplaceConstants.RECEIVED_PDEX_RESOURCE_OK :
-                                 FHIRplaceConstants.RECEIVED_PDEX_RESOURCE_NOT_OK;
-          FHIRplaceUtil.sendStatus(statusType, requestFileName, this.instruct, this.trans, this.params, statusMsg);
-          
+          // Upload the transported headers and metadata in response
           String headersAndMetaData = "Received headers and metadata";
           uploadReceivedData(testRequestID, FHIRplaceConstants.TRANSPORT_DATA, headersAndMetaData, statusMsg);
           
-          // Validate the PDEX Resource
-          statusMsg = success ? "Successfully verified PDEX Resource" : 
-                                "Did not successfully verify PDEX Resource";
-          statusType = success ? FHIRplaceConstants.PDEX_RESOURCE_VERIFIED_OK :
-                                 FHIRplaceConstants.PDEX_RESOURCE_VERIFIED_NOT_OK;
+          // Verify whether the patient data is OK or not
+          statusMsg = success ? "Successfully validated the Patient Data" : "Patient Data was invalid";
+          statusType = success ? FHIRplaceConstants.VERIFIED_OK : FHIRplaceConstants.VERIFIED_NOT_OK;
           FHIRplaceUtil.sendStatus(statusType, requestFileName, this.instruct, this.trans, this.params, statusMsg);
           
           verificationError = !success;
@@ -684,43 +539,9 @@ public class ProcessTestRequest extends Thread {
           }
           break;
         }
-       
-        case FHIRplaceConstants.PATIENT_ALL :
-        case FHIRplaceConstants.PATIENT_NS :
-        {
-          // Receive, report, upload the transport data (headers and metadata) and verify the Patient Data
-          // For Patient_All this should be all the data 
-          // For Patient_NS this should only be just the non-sensitive data
-
-          statusMsg = success ? "Successfully received the Patient Data" :
-                                "Did not successfully receive the Patient Data";
-          statusType = success ? FHIRplaceConstants.RECEIVED_PATIENT_DATA_OK :
-                                 FHIRplaceConstants.RECEIVED_PATIENT_DATA_NOT_OK;
-          FHIRplaceUtil.sendStatus(statusType, requestFileName, this.instruct, this.trans, this.params, statusMsg);
-          
-          
-          String headersAndMetaData = "Received headers and metadata";
-          uploadReceivedData(testRequestID, FHIRplaceConstants.TRANSPORT_DATA, headersAndMetaData, statusMsg);
-          
-
-          // Validate whether the patient data is OK or not.. 
-          statusMsg = success ? "Successfully validated the Patient Data" :
-                                "Patient Data was invalid";
-          statusType = success ? FHIRplaceConstants.PATIENT_DATA_VERIFIED_OK :
-                                 FHIRplaceConstants.PATIENT_DATA_VERIFIED_NOT_OK;
-          
-          verificationError = !success;
-          if (verificationError) {
-            verificationErrorMsg = statusMsg;
-          }
-          FHIRplaceUtil.sendStatus(statusType, requestFileName, this.instruct, this.trans, this.params, statusMsg);
-
-          break;
-        }
-
       }
-      log.write(statusMsg + " - (" + this.desc.getTestRequestID() + ")");      
-           
+
+      log.write(statusMsg + " - (" + this.desc.getTestRequestID() + ")");                 
     }
     
     // Evaluate the overall outcome of the test
@@ -728,7 +549,7 @@ public class ProcessTestRequest extends Thread {
    
     this.params.removeActiveTest(testRequestID);
     if (params.isDebugMode()) {
-      log.write("Removed partner '" + FHIRplaceUtil.getTP(trans, params) + "' from list of active tests. (" + testRequestID + ")");
+      log.write("Removed partner '" + FHIRplaceUtil.getTP(trans, params) + "' from list of active tests. (" + testRequestID + ")\n");
     }  
   }  
 

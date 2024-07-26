@@ -11,32 +11,12 @@ public class Instructions {
   String ackID = null;
   String sendID = null;
   String receiveID = null;
-  
-  String sendFhirID = null;
-  String receiveFhirID = null;
-  String sendAccessTokenID = null;
-  String receiveAccessTokenID = null;
-
-  String sendPdexRequestID = null;
-  String receivePdexRequestID = null;
-  String sendPdexResourceID = null;
-  String receivePdexResourceID = null;
-          
-  String sendPatientRequestID = null;
-  String receivePatientRequestID = null;  
-  String sendPatientDataID = null;
-  String receivePatientDataID = null;  
-  
-  String accessTokenVerifyID = null;
-  String clientIDVerifyID = null;
-  String fhirIDVerifyID = null;
-  String pdexResourceVerifyID = null;
-  String patientDataVerifyID = null;
-
+  String verifyID = null;
   String evaluateTestID = null;
 
   String sendDataType = null;
   String receiveDataType = null;
+  String verificationType = null;
 
   // Contains all the upload instructions
   Vector uploadVector = new Vector();
@@ -99,54 +79,12 @@ public class Instructions {
   public String getAckID() {
     return this.ackID;
   }
-
-  public void setSendID(String sendID, String dataType) {
-    switch (dataType) {
-      case FHIRplaceConstants.ACCESS_TOKEN_TYPE :
-        this.sendAccessTokenID = sendID;
-        break;
-      case FHIRplaceConstants.FHIR_ID_TYPE :
-        this.sendFhirID = sendID;
-        break;
-      case FHIRplaceConstants.PDEX_REQUEST_TYPE :
-        this.sendPdexRequestID = sendID;
-        break;
-      case FHIRplaceConstants.PDEX_RESOURCE_TYPE :
-        this.sendPdexResourceID = sendID;
-        break;
-      case FHIRplaceConstants.PATIENT_REQUEST_TYPE :
-        this.sendPatientRequestID = sendID;
-        break;
-      case FHIRplaceConstants.PATIENT_DATA_TYPE :
-        this.sendPatientDataID = sendID;
-        break;
-      default :
-        this.sendID = sendID;
-    }
+  public void setSendID(String sendID) {
+    this.sendID = sendID;
   }
   public String getSendID() {
     return this.sendID;
   }
-  public String getSendFhirID() {
-    return this.sendFhirID;
-  }
-  public String getSendAccessTokenID() {
-    return this.sendAccessTokenID;
-  }
-
-  public String getSendPdexRequestID() {
-    return sendPdexRequestID;
-  }
-  public String getSendPdexResourceID() {
-    return sendPdexResourceID;
-  }
-  public String getSendPatientRequestID() {
-    return sendPatientRequestID;
-  }
-  public String getSendPatientDataID() {
-    return this.sendPatientDataID;
-  }
-
   public void setSendDataType(String sendDataType) {
     this.sendDataType = sendDataType;
   }
@@ -154,53 +92,12 @@ public class Instructions {
     return this.sendDataType;
   }
 
-  public void setReceiveID(String receiveID, String dataType) {
-    switch (dataType) {
-      case FHIRplaceConstants.ACCESS_TOKEN_TYPE :
-        this.receiveAccessTokenID = receiveID;
-        break;
-      case FHIRplaceConstants.FHIR_ID_TYPE :
-        this.receiveFhirID = receiveID;
-        break;
-      case FHIRplaceConstants.PDEX_REQUEST_TYPE :
-        this.receivePdexRequestID = receiveID;
-        break;
-      case FHIRplaceConstants.PDEX_RESOURCE_TYPE :
-        this.receivePdexResourceID = receiveID;
-        break;
-      case FHIRplaceConstants.PATIENT_REQUEST_TYPE :
-        this.receivePatientRequestID = receiveID;
-        break;
-      case FHIRplaceConstants.PATIENT_DATA_TYPE :
-        this.receivePatientDataID = receiveID;
-        break;
-      default :
-        this.receiveID = receiveID;
-    }
+  public void setReceiveID(String receiveID) {
+    this.receiveID = receiveID;
   }
   public String getReceiveID() {
     return this.receiveID;
   }
-  public String getReceiveFhirID() {
-    return this.receiveFhirID;
-  }
-  public String getReceiveAccessTokenID() {
-    return this.receiveAccessTokenID;
-  }
-
-  public String getReceivePdexRequestID() {
-    return receivePdexRequestID;
-  }
-  public String getReceivePdexResourceID() {
-    return receivePdexResourceID;
-  }
-  public String getReceivePatientRequestID() {
-    return receivePatientRequestID;
-  }
-  public String getReceivePatientDataID() {
-    return this.receivePatientDataID;
-  }
-  
   public void setReceiveDataType(String receiveDataType) {
     this.receiveDataType = receiveDataType;
   }
@@ -208,41 +105,16 @@ public class Instructions {
     return this.receiveDataType;
   }
 
-  public void setAccessTokenVerifyID(String accessTokenVerifyID) {
-    this.accessTokenVerifyID = accessTokenVerifyID;
+  public void setVerifyID(String verifyID, String verificationType) {
+    this.verifyID = verifyID;
+    this.verificationType = verificationType;
   }
-  public String getAccessTokenVerifyID() {
-    return this.accessTokenVerifyID;
+  public String getVerifyID() {
+    return this.verifyID;
   }
-
-  public void setClientIDVerifyID(String clientIDVerifyID) {
-    this.clientIDVerifyID = clientIDVerifyID;
+  public String getVerificationType() {
+    return this.verificationType;
   }
-  public String getClientIDVerifyID() {
-    return clientIDVerifyID;
-  }
-
-  public void setFhirIDVerifyID(String fhirIDVerifyID) {
-    this.fhirIDVerifyID = fhirIDVerifyID;
-  }
-  public String getFhirIDVerifyID() {
-    return this.fhirIDVerifyID;
-  }
-
-  public void setPdexResourceVerifyID(String pdexResourceVerifyID) {
-    this.pdexResourceVerifyID = pdexResourceVerifyID;
-  }
-  public String getPdexResourceVerifyID() {
-    return pdexResourceVerifyID;
-  }
-
-  public void setPatientDataVerifyID(String patientDataVerifyID) {
-    this.patientDataVerifyID = patientDataVerifyID;
-  }
-  public String getPatientDataVerifyID() {
-    return patientDataVerifyID;
-  }
-  
   public void setEvaluateTestID(String evaluateTestID){
     this.evaluateTestID = evaluateTestID;
   }
@@ -254,27 +126,20 @@ public class Instructions {
   public String toString() {
     StringBuilder instrBuf = new StringBuilder();
 
-    instrBuf.append("Ack ID: ").append(this.ackID).append("\n");    
+    instrBuf.append("Ack ID: ").append(this.ackID).append("\n\n");    
 
-    instrBuf.append("Send ID: ").append(this.sendID != null ? this.sendID : "<Not set>").append("\n");
-    instrBuf.append("Send FHIR ID: ").append(this.sendFhirID != null ? this.sendFhirID : "<Not set>").append("\n");
-    instrBuf.append("Send Access Token ID: ").append(this.sendAccessTokenID != null ? this.sendAccessTokenID : "<Not set>").append("\n");
-    instrBuf.append("Send PDEX Request ID: ").append(this.sendPdexRequestID != null ? this.sendPdexRequestID : "<Not set>").append("\n");
-    instrBuf.append("Send PDEX Resource ID: ").append(this.sendPdexResourceID != null ? this.sendPdexResourceID : "<Not set>").append("\n");
-    instrBuf.append("Send Patient Request ID: ").append(this.sendPatientRequestID != null ? this.sendPatientRequestID : "<Not set>").append("\n");
-    instrBuf.append("Send Patient Data ID: ").append(this.sendPatientDataID != null ? this.sendPatientDataID : "<Not set>").append("\n");  
-
-    instrBuf.append("Send DataType: ").append(this.sendDataType).append("\n\n");
-
-    instrBuf.append("Receive ID: ").append(this.receiveID != null ? this.receiveID : "<Not set>").append("\n");
-    instrBuf.append("Receive FHIR ID: ").append(this.receiveFhirID != null ? this.receiveFhirID : "<Not set>").append("\n");
-    instrBuf.append("Receive Access Token ID: ").append(this.receiveAccessTokenID != null ? this.receiveAccessTokenID : "<Not set>").append("\n");
-    instrBuf.append("Receive PDEX Request ID: ").append(this.receivePdexRequestID != null ? this.receivePdexRequestID : "<Not set>").append("\n");
-    instrBuf.append("Receive PDEX Resource ID: ").append(this.receivePdexResourceID != null ? this.receivePdexResourceID : "<Not set>").append("\n");
-    instrBuf.append("Receive Patient Request ID: ").append(this.receivePatientRequestID != null ? this.receivePatientRequestID : "<Not set>").append("\n");
-   instrBuf.append("Receive Patient Data ID: ").append(this.receivePatientDataID != null ? this.receivePatientDataID : "<Not set>").append("\n");
-
-    instrBuf.append("Receive DataType: ").append(this.receiveDataType).append("\n\n"); 
+    if (this.sendID != null) {
+      instrBuf.append("Send ID: ").append(this.sendID).append("\n");
+    }
+    if (this.sendDataType != null) {
+      instrBuf.append("Send DataType: ").append(this.sendDataType).append("\n\n");
+    }
+    if (this.receiveID != null) {
+      instrBuf.append("Receive ID: ").append(this.receiveID).append("\n");
+    }
+    if (this.receiveDataType != null) {
+      instrBuf.append("Receive DataType: ").append(this.receiveDataType).append("\n\n"); 
+    }
 
     Upload[] uploadInstructions = this.getUpload();
     StringBuilder uploadBuf = new StringBuilder();
@@ -282,16 +147,18 @@ public class Instructions {
     for (Upload uploadInstruction : uploadInstructions) {
       uploadBuf.append(uploadInstruction.toString());
     }
-
     instrBuf.append("Upload Instructions:\n")
             .append(uploadBuf.toString()).append("\n");
-    
-    instrBuf.append("Access Token Verification ID: ").append(this.accessTokenVerifyID != null ? this.accessTokenVerifyID : "<Not set>").append("\n");
-    instrBuf.append("Client ID Verification ID: ").append(this.clientIDVerifyID != null ? this.clientIDVerifyID : "<Not set>").append("\n");
-    instrBuf.append("FHIR ID Verification ID: ").append(this.fhirIDVerifyID != null ? this.fhirIDVerifyID : "<Not set>").append("\n");
-    instrBuf.append("PDEX Resource Verification ID: ").append(this.pdexResourceVerifyID != null ? this.pdexResourceVerifyID : "<Not set>").append("\n");
-    instrBuf.append("Patient Data Verification ID: ").append(this.pdexResourceVerifyID != null ? this.pdexResourceVerifyID : "<Not set>").append("\n");
-    instrBuf.append("EvaluateTest ID: ").append(this.evaluateTestID != null ? this.evaluateTestID : "<Not set>").append("\n\n");
+
+    if (this.verifyID != null) {
+      instrBuf.append("Verify ID: ").append(this.verifyID).append("\n");
+    }
+    if (this.verificationType != null) {
+      instrBuf.append("Verification Type: ").append(this.verificationType).append("\n");
+    }
+    if (this.evaluateTestID != null) {
+      instrBuf.append("EvaluateTest ID: ").append(this.evaluateTestID).append("\n");
+    }
 
     return instrBuf.toString();
   }
@@ -299,7 +166,7 @@ public class Instructions {
   // This class holds the information for an "Upload" instruction
   public class Upload {
     String responseID = "";     // Identifier of the upload
-    int type = -1;              // AccessToken = 0, FHIR-responseID = 1, PatientData = 2
+    int type = -1;              // AccessToken = 0, ClientID = 1, FHIR-ID = 2, PatientData = 3, Transport = 4 
     int direction;              // Either sent=0 or received=1 (specified as a FHIRplace Constant)
 
    // Set methods
@@ -375,6 +242,4 @@ public class Instructions {
       return uploadBuf.toString();
     }
   }
-
 }
-

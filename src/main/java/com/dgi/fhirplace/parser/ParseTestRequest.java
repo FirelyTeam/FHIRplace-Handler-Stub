@@ -92,7 +92,7 @@ public class ParseTestRequest {
 
     // Log the contents of the objects that were created
     if (params.isDebugMode()) {
-      log.write("\n--- Participants ---");
+      log.write("\n\n--- Participants ---");
       Participant[] parts = xml.getParticipant();
       for (Participant part : parts) {
         log.write(part.toString());
@@ -137,8 +137,8 @@ public class ParseTestRequest {
           desc.setVersion(childNodeList.item(0).getNodeValue());
         } else if (FHIRplaceUtil.getNodeName(childNode).equalsIgnoreCase("TestCase")) {
           desc.setTestCase(childNodeList.item(0).getNodeValue());
-        } else if (FHIRplaceUtil.getNodeName(childNode).equalsIgnoreCase("TestCaseType")) {
-          desc.setTestCaseType(childNodeList.item(0).getNodeValue());
+        } else if (FHIRplaceUtil.getNodeName(childNode).equalsIgnoreCase("ConnectivityType")) {
+          desc.setConnectivityType(childNodeList.item(0).getNodeValue());
         } else if (FHIRplaceUtil.getNodeName(childNode).equalsIgnoreCase("TestDescription")) {
           desc.setTestDescription(childNodeList.item(0).getNodeValue());
         } else if (FHIRplaceUtil.getNodeName(childNode).equalsIgnoreCase("ExpectedResult")) {
@@ -248,7 +248,36 @@ public class ParseTestRequest {
           Node newChildNode = childNodeList.item(j);
           if (newChildNode.hasAttributes() || newChildNode.hasChildNodes()) {
 
-            if (FHIRplaceUtil.getNodeName(newChildNode).equalsIgnoreCase("mTLS") ) {
+            if (FHIRplaceUtil.getNodeName(newChildNode).equalsIgnoreCase("FHIRServer")) {
+              if (newChildNode.hasAttributes()) {
+                NamedNodeMap fhirServerAttributes = newChildNode.getAttributes();
+                for (int k=0; k < fhirServerAttributes.getLength(); k++) {
+                  if (fhirServerAttributes.item(k).getNodeName().equalsIgnoreCase("URL")) {
+                    trans.setFhirServer(fhirServerAttributes.item(k).getNodeValue());
+                  }
+                }
+              }
+            } else if (FHIRplaceUtil.getNodeName(newChildNode).equalsIgnoreCase("AuthorizationServer")) {
+              if (newChildNode.hasAttributes()) {
+                NamedNodeMap authServerAttributes = newChildNode.getAttributes();
+                for (int k=0; k < authServerAttributes.getLength(); k++) {
+                   if (authServerAttributes.item(k).getNodeName().equalsIgnoreCase("URL")) {
+                    trans.setAuthorizationServer(authServerAttributes.item(k).getNodeValue());
+                  }
+                }
+              }
+            } else if (FHIRplaceUtil.getNodeName(newChildNode).equalsIgnoreCase("ClientJwk")) {
+              if (newChildNode.hasAttributes()) {
+                NamedNodeMap clientJwkAttributes = newChildNode.getAttributes();       
+                for (int k=0; k < clientJwkAttributes.getLength(); k++) {
+                  if (clientJwkAttributes.item(k).getNodeName().equalsIgnoreCase("FileName")) {
+                    trans.setClientJwkFileName(clientJwkAttributes.item(k).getNodeValue());
+                  } else if (clientJwkAttributes.item(k).getNodeName().equalsIgnoreCase("Owner")) {
+                    trans.setClientJwkOwner(clientJwkAttributes.item(k).getNodeValue());
+                  }
+                }
+              }
+            } else if (FHIRplaceUtil.getNodeName(newChildNode).equalsIgnoreCase("mTLS") ) {
               if (newChildNode.hasAttributes()) {
                 NamedNodeMap mTLSAttributes = newChildNode.getAttributes();
            
@@ -257,7 +286,7 @@ public class ParseTestRequest {
                     trans.setBundleName(mTLSAttributes.item(k).getNodeValue());
                   } else if (mTLSAttributes.item(k).getNodeName().equalsIgnoreCase("Type")) {
                     trans.setBundleType(mTLSAttributes.item(k).getNodeValue());
-                  } else if (mTLSAttributes.item(k).getNodeName().equalsIgnoreCase("ParticipantID")) {
+                  } else if (mTLSAttributes.item(k).getNodeName().equalsIgnoreCase("Owner")) {
                     trans.setBundleOwner(mTLSAttributes.item(k).getNodeValue());
                   }
                 }
@@ -271,12 +300,25 @@ public class ParseTestRequest {
                     trans.setPatientResourceName(patientAttributes.item(k).getNodeValue());
                   } else if (patientAttributes.item(k).getNodeName().equalsIgnoreCase("Type")) {
                     trans.setPatientResourceType(patientAttributes.item(k).getNodeValue());
-                  } else if (patientAttributes.item(k).getNodeName().equalsIgnoreCase("ParticipantID")) {
+                  } else if (patientAttributes.item(k).getNodeName().equalsIgnoreCase("Owner")) {
                     trans.setPatientResourceOwner(patientAttributes.item(k).getNodeValue());
                   }
                 }
               }
-            }
+            } else if (FHIRplaceUtil.getNodeName(newChildNode).equalsIgnoreCase("Coverage")) {
+              if (newChildNode.hasAttributes()) {
+                NamedNodeMap coverageAttributes = newChildNode.getAttributes();          
+                for (int k=0; k < coverageAttributes.getLength(); k++) {
+                  if (coverageAttributes.item(k).getNodeName().equalsIgnoreCase("ResourceName")) {
+                    trans.setCoverageResourceName(coverageAttributes.item(k).getNodeValue());
+                  } else if (coverageAttributes.item(k).getNodeName().equalsIgnoreCase("Type")) {
+                    trans.setCoverageResourceType(coverageAttributes.item(k).getNodeValue());
+                  } else if (coverageAttributes.item(k).getNodeName().equalsIgnoreCase("Owner")) {
+                    trans.setCoverageResourceOwner(coverageAttributes.item(k).getNodeValue());
+                  }
+                }
+              }
+            } 
           }
         }
       }  
@@ -366,10 +408,10 @@ public class ParseTestRequest {
                 if (participant != null && participant.equalsIgnoreCase(params.getXMLIdentifier())) {
 
                   if (direction.equalsIgnoreCase("Send") ) {
-                    instruct.setSendID(responseID, dataType);
+                    instruct.setSendID(responseID);
 
                   } else if (direction.equalsIgnoreCase("Receive") ) {
-                    instruct.setReceiveID(responseID, dataType);
+                    instruct.setReceiveID(responseID);
                   }
                 }
 
@@ -439,17 +481,7 @@ public class ParseTestRequest {
 
                 // If this element belongs to us, update the appropriate Verification Aspect instructions
                 if (participant != null && participant.equalsIgnoreCase(params.getXMLIdentifier())) {
-                  if (verification != null && verification.equalsIgnoreCase("AccessToken")) {
-                    instruct.setAccessTokenVerifyID(responseID);
-                  } else if (verification != null && verification.equalsIgnoreCase("ClientID")) {
-                    instruct.setClientIDVerifyID(responseID);
-                  } else if (verification != null && verification.equalsIgnoreCase("FHIR-ID")) {
-                    instruct.setFhirIDVerifyID(responseID);
-                  } else if (verification != null && verification.equalsIgnoreCase("PDEXResource")) {
-                    instruct.setPdexResourceVerifyID(responseID);
-                  } else if (verification != null && verification.equalsIgnoreCase("PatientData")) {
-                    instruct.setPatientDataVerifyID(responseID);
-                  } 
+                  instruct.setVerifyID(responseID, verification);
                 }
               }
             }

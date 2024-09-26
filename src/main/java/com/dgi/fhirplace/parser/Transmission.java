@@ -1,7 +1,6 @@
 package com.dgi.fhirplace.parser;
 
 import com.dgi.fhirplace.util.FHIRplaceUtil;
-import com.google.common.base.Strings;
 
  /**
   * This class contains all the attributes in the Transmission
@@ -186,45 +185,45 @@ public class Transmission {
              .append("Recipient: ").append(this.recipient)
              .append(", Role: ").append(this.recipientRole).append("\n");
 
-    if (!Strings.isNullOrEmpty(this.fhirServer)) {
+    if (!FHIRplaceUtil.isNullOrEmpty(this.fhirServer)) {
       transData.append("FHIR Server: ").append(this.fhirServer).append("\n");
     }
-    if (!Strings.isNullOrEmpty(this.authServer)) {
+    if (!FHIRplaceUtil.isNullOrEmpty(this.authServer)) {
       transData.append("Authorization Server: ").append(this.authServer).append("\n");
     }
     
-    if (!Strings.isNullOrEmpty(this.clientJwkFileName)) {
+    if (!FHIRplaceUtil.isNullOrEmpty(this.clientJwkFileName)) {
       transData.append("Client Jwk Filename: ").append(this.clientJwkFileName).append("\n");
     }
-    if (!Strings.isNullOrEmpty(this.clientJwkOwner)) {
+    if (!FHIRplaceUtil.isNullOrEmpty(this.clientJwkOwner)) {
       transData.append("Client Jwk Owner: ").append(this.clientJwkOwner).append("\n"); 
     }
-    if (!Strings.isNullOrEmpty(this.bundleName)) {   
+    if (!FHIRplaceUtil.isNullOrEmpty(this.bundleName)) {   
       transData.append("Bundle Name: ").append(this.bundleName).append("\n");
     }
-    if (!Strings.isNullOrEmpty(this.bundleType)) {
+    if (!FHIRplaceUtil.isNullOrEmpty(this.bundleType)) {
       transData.append("Bundle Type: ").append(this.bundleType).append("\n");
     }
-    if (!Strings.isNullOrEmpty(this.bundleOwner)) {
+    if (!FHIRplaceUtil.isNullOrEmpty(this.bundleOwner)) {
       transData.append("Bundle Owner: ").append(this.bundleOwner).append("\n");
     }
-    if (!Strings.isNullOrEmpty(this.patientResourceName)) {
+    if (!FHIRplaceUtil.isNullOrEmpty(this.patientResourceName)) {
       transData.append("Patient Resource Name: ").append(this.patientResourceName).append("\n");
     }
-    if (!Strings.isNullOrEmpty(this.patientResourceType)) {
+    if (!FHIRplaceUtil.isNullOrEmpty(this.patientResourceType)) {
       transData.append("Patient Resource Type: ").append(this.patientResourceType).append("\n");
     }
-    if (!Strings.isNullOrEmpty(this.patientResourceOwner)) {
+    if (!FHIRplaceUtil.isNullOrEmpty(this.patientResourceOwner)) {
       transData.append("Patient Resource Owner: ").append(this.patientResourceOwner).append("\n");
     }
     
-    if (!Strings.isNullOrEmpty(this.coverageResourceName)) {
+    if (!FHIRplaceUtil.isNullOrEmpty(this.coverageResourceName)) {
       transData.append("Coverage Resource Name: ").append(this.coverageResourceName).append("\n");
     }
-    if (!Strings.isNullOrEmpty(this.coverageResourceType)) {
+    if (!FHIRplaceUtil.isNullOrEmpty(this.coverageResourceType)) {
       transData.append("Coverage Resource Type: ").append(this.coverageResourceType).append("\n");
     }
-    if (!Strings.isNullOrEmpty(this.coverageResourceOwner)) {
+    if (!FHIRplaceUtil.isNullOrEmpty(this.coverageResourceOwner)) {
       transData.append("Coverage Resource Owner: ").append(this.coverageResourceOwner).append("\n");
     }
 

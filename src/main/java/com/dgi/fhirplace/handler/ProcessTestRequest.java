@@ -8,7 +8,6 @@ import com.dgi.fhirplace.parser.Participant;
 import com.dgi.fhirplace.parser.Transmission;
 import com.dgi.fhirplace.util.FHIRplaceUtil;
 import com.dgi.fhirplace.util.FileUtility;
-import com.google.common.base.Strings;
 
 import java.io.File;
 
@@ -108,12 +107,12 @@ public class ProcessTestRequest extends Thread {
       this.setName("ProcessTestRequest:" + testRequestID + "_" + this.getName());
 
       // If there is a test description, log it
-      if (!Strings.isNullOrEmpty(this.desc.getTestDescription())) {
+      if (!FHIRplaceUtil.isNullOrEmpty(this.desc.getTestDescription())) {
         log.write("Description: " + this.desc.getTestDescription() + " (" + testRequestID + ")");
       }
       
       // If there is a Connectivity Type, log it
-      if (!Strings.isNullOrEmpty(connectivityType)) {
+      if (!FHIRplaceUtil.isNullOrEmpty(connectivityType)) {
         log.write("Connectivity Type: " + connectivityType + " (" + testRequestID + ")");
       }
       
@@ -143,8 +142,8 @@ public class ProcessTestRequest extends Thread {
           log.write("Preparing to send " + sendDataType + " transmission for Test Case " + testCase +
                     " to " + FHIRplaceUtil.getTP(this.trans, this.params) + " (" + testRequestID + ")");
 
-// **** Put your connection to partner code here ***
-
+// **** Put your connection to partner code or hooks to your FHIR Client here ***
+           
           // Check for the HTTP status of your send to determine if the transfer 
           // was a success or not (override the success boolean if unsuccessful)
           

@@ -4,7 +4,6 @@ import com.dgi.fhirplace.handler.FHIRplaceConstants;
 import com.dgi.fhirplace.handler.LocalParameters;
 import com.dgi.fhirplace.parser.Transmission;
 import com.dgi.fhirplace.parser.Instructions;
-import com.google.common.base.Strings;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
@@ -29,13 +28,13 @@ public class FHIRplaceUtil {
    */
   public static synchronized void checkDirectories(LocalParameters params) {
     // Request Directory
-    if (!Strings.isNullOrEmpty(params.getTestRequestDirectory())) {   
+    if (!FHIRplaceUtil.isNullOrEmpty(params.getTestRequestDirectory())) {   
       File reqDir = new File(params.getTestRequestDirectory());
       if (!reqDir.exists()) {
         reqDir.mkdirs();
       }
     }
-    if (!Strings.isNullOrEmpty(params.getStatusDirectory())) {
+    if (!FHIRplaceUtil.isNullOrEmpty(params.getStatusDirectory())) {
       // Status Directory
       File statDir = new File(params.getStatusDirectory());
       if (!statDir.exists()) {
@@ -43,14 +42,14 @@ public class FHIRplaceUtil {
       }
     }
     // Payload Directory
-    if (!Strings.isNullOrEmpty(params.getPayloadDirectory())) {
+    if (!FHIRplaceUtil.isNullOrEmpty(params.getPayloadDirectory())) {
       File payloadDir = new File(params.getPayloadDirectory());
       if (!payloadDir.exists()) {
         payloadDir.mkdirs();
       }
     }
     // Archive Directory
-    if (!Strings.isNullOrEmpty(params.getArchiveDirectory())) {
+    if (!FHIRplaceUtil.isNullOrEmpty(params.getArchiveDirectory())) {
       File archiveDir = new File(params.getArchiveDirectory());
       if (!archiveDir.exists()) {
         archiveDir.mkdirs();
@@ -280,5 +279,14 @@ public class FHIRplaceUtil {
         fout.write(content.getBytes());
       }
     }
+  }
+  
+  /**
+   * Determines whether a string is null or empty
+   * @param s - the string to check
+   * @return true if the string is null or empty
+   */
+  public static boolean isNullOrEmpty(String s) {
+    return (s == null) || s.isEmpty();
   }
 }

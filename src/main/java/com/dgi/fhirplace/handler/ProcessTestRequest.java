@@ -26,6 +26,9 @@ public class ProcessTestRequest extends Thread {
 
   FHIRplaceHandler handler = null;
   LocalParameters params = null;
+  
+  SendAsClient sender = null;
+  ReceiveAsServer receiver = null;
 
   String requestFileName = null;
 
@@ -96,11 +99,11 @@ public class ProcessTestRequest extends Thread {
       String connectivityType = this.desc.getConnectivityType();
 
       // Make sure there isn't already another running test for a different test case for this trading partner            
-      String tp = FHIRplaceUtil.getTP(trans, params);
+      partner = FHIRplaceUtil.getTP(trans, params);
       String activeTest;
       int activeCount = 0;
-      while ((activeTest = params.getPartnerAlreadyActiveTest(purpose, testRequestID, tp)) != null && activeCount < 5) {
-        log.write("Partner [" + tp + "] still has an active test [" + activeTest + "], waiting 30 seconds for it to complete (" + testRequestID + ")");
+      while ((activeTest = params.getPartnerAlreadyActiveTest(purpose, testRequestID, partner)) != null && activeCount < 5) {
+        log.write("Partner [" + partner + "] still has an active test [" + activeTest + "], waiting 30 seconds for it to complete (" + testRequestID + ")");
         activeCount++;
         FHIRplaceUtil.wait(30);
       }
@@ -115,7 +118,7 @@ public class ProcessTestRequest extends Thread {
       if (!FHIRplaceUtil.isNullOrEmpty(connectivityType)) {
         log.write("Connectivity Type: " + connectivityType + " (" + testRequestID + ")");
       }
-      
+     
       // Send the ACK that the FHIRPlace Message was successfully parsed and we're ready to start the test
       String ackMessage = "Sent ACK for " + purpose;
       FHIRplaceUtil.sendStatus(FHIRplaceConstants.ACK, this.requestFileName, this.instruct, this.trans, this.params, ackMessage);
@@ -128,7 +131,7 @@ public class ProcessTestRequest extends Thread {
 
         // Get expected result.  If it isn't present, default it to "Success"
         String expectedResult = desc.getExpectedResult() != null ? desc.getExpectedResult() : FHIRplaceConstants.SUCCESS;
-        boolean success = expectedResult.equalsIgnoreCase(FHIRplaceConstants.SUCCESS);
+        boolean expected = expectedResult.equalsIgnoreCase(FHIRplaceConstants.SUCCESS);
         String statusMsg = "";
         int statusType;
          
@@ -140,16 +143,20 @@ public class ProcessTestRequest extends Thread {
           // Trigger off the send Data Type to determine what you are going to send
           String sendDataType = instruct.getSendDataType();
           log.write("Preparing to send " + sendDataType + " transmission for Test Case " + testCase +
-                    " to " + FHIRplaceUtil.getTP(this.trans, this.params) + " (" + testRequestID + ")");
+                    " to " + partner + " (" + testRequestID + ")");
 
-// **** Put your connection to partner code or hooks to your FHIR Client here ***
-           
-          // Check for the HTTP status of your send to determine if the transfer 
-          // was a success or not (override the success boolean if unsuccessful)
+          // **** Put your connection to partner code or hooks to your FHIR Client in the SendAsClient class ***
+          
+          sender = new SendAsClient(testRequestID, partner, sendDataType, this.trans, this.log);
+          
+          // This method should send the request and wait for the response and
+          // then update the values that were received within the SendAsClient object
+          sender.send();
+          boolean success = sender.isSendSuccess();
           
           // Report the result of the initial transmission
-          statusMsg =  success ? "Successfully sent " + sendDataType + " to " + FHIRplaceUtil.getTP(trans, params) :
-                                 "Error sending " + sendDataType + " to " + FHIRplaceUtil.getTP(trans, params);
+          statusMsg =  success ? "Successfully sent " + sendDataType + " to " +  partner :
+                                 "Error sending " + sendDataType + " to " + partner;
 
           statusType = success ? FHIRplaceConstants.SENT_OK : FHIRplaceConstants.SENT_NOT_OK;
 
@@ -173,13 +180,13 @@ public class ProcessTestRequest extends Thread {
             
             case FHIRplaceConstants.FHIR_ID_TYPE :
               // Upload the FHIR-ID that was sent
-              String fhirID = "ABCDEFGHIJKLMNOP";
+              String fhirID = sender.getFhirID();
               uploadSentData(testRequestID, FHIRplaceConstants.FHIR_ID_DATA, fhirID);              
               break;
             
             case FHIRplaceConstants.PATIENT_REQUEST_TYPE :
               // Upload the Access-Token
-              String accessToken = "123456789";
+              String accessToken = sender.getAccessToken();
               uploadSentData(testRequestID, FHIRplaceConstants.ACCESS_TOKEN_DATA, accessToken);
               break;
           }
@@ -194,23 +201,26 @@ public class ProcessTestRequest extends Thread {
           String receiveDataType = instruct.getReceiveDataType();
           
           log.write("Waiting to receive " + receiveDataType + " for Test Case " + testCase + 
-                     " from " + FHIRplaceUtil.getTP(this.trans, this.params) + " (" + testRequestID + ")" );
+                     " from " + partner + " (" + testRequestID + ")" );
 
-// **** Put connection receiving code here ***
+          // Put connection receiving code in the ReceiveAsServer class
+          receiver = new ReceiveAsServer(testRequestID, partner, receiveDataType, this.trans, this.log);
 
-          // When receiving, trigger off the receiveDataType value
-          log.write("The received data type is: " + receiveDataType);
+          // This method should wait for the request from the sender, send a response
+          // then update the values that were requested and returned within the ReceiveAsServer object
+          receiver.receive();
+          boolean success = receiver.isReceiveSuccess();
                      
           // Determine if the initial receive was a success or not or fake it 
           // as a failure for the test cases expecting an error result
           // Simulate a failure for the Failure-type tests
 
-          if (expectedResult.equals(FHIRplaceConstants.FAILURE))
-            success = false;
+          //if (expectedResult.equals(FHIRplaceConstants.FAILURE))
+          //  success = false;
           
           // Report the result of the initial transmission
-          statusMsg  = success ? "Successfully received " + receiveDataType + " from " + FHIRplaceUtil.getTP(trans, params) :
-                                 "Error receiving " + receiveDataType + " from " + FHIRplaceUtil.getTP(trans, params);
+          statusMsg  = success ? "Successfully received " + receiveDataType + " from " + partner :
+                                 "Error receiving " + receiveDataType + " from " + partner;
           
           statusType = success ? FHIRplaceConstants.RECEIVED_OK : FHIRplaceConstants.RECEIVED_NOT_OK;
           FHIRplaceUtil.sendStatus(statusType, requestFileName, this.instruct, this.trans, this.params, statusMsg);
@@ -233,7 +243,7 @@ public class ProcessTestRequest extends Thread {
             
             case FHIRplaceConstants.FHIR_ID_TYPE :
               // Upload FHIR-ID
-              String fhirID = generateMismatchErrors ? "ABCDEFG" : "ABCDEFGHIJKLMNOP";
+              String fhirID = receiver.getFhirID();
               uploadReceivedData(testRequestID, FHIRplaceConstants.FHIR_ID_DATA, fhirID, statusMsg);
               
               // Verify the FHIR-ID
@@ -244,7 +254,7 @@ public class ProcessTestRequest extends Thread {
             
             case FHIRplaceConstants.PATIENT_REQUEST_TYPE :
               // Upload the Access Token
-              String accessToken = generateMismatchErrors ? "1234567890" : "123456789";
+              String accessToken = receiver.getAccessToken();
               uploadReceivedData(testRequestID, FHIRplaceConstants.ACCESS_TOKEN_DATA, accessToken, statusMsg);
               
               // Verify whether the Access Token is OK or not.. 
@@ -262,7 +272,7 @@ public class ProcessTestRequest extends Thread {
           // If there was an error, negatively evaluate the test
           FHIRplaceUtil.sendStatus(FHIRplaceConstants.RESULTS_NOT_OK, this.requestFileName, 
                                    this.instruct, this.trans, this.params, statusMsg);
-          log.write("Test status(" + FHIRplaceUtil.getTP(trans, params) + "): FAILURE - " + statusMsg + " - (" +
+          log.write("Test status(" + partner + "): FAILURE - " + statusMsg + " - (" +
                      this.desc.getTestRequestID() + ")");
         }
 
@@ -337,7 +347,7 @@ public class ProcessTestRequest extends Thread {
           FHIRplaceUtil.sendStatus(FHIRplaceConstants.RESULTS_NOT_OK, this.requestFileName, 
                                 this.instruct, this.trans, this.params, errMsg);
         } catch (Exception e2) {
-           log.write("Error updating TEST STATUS (" + FHIRplaceUtil.getTP(trans, params) + ")" + " - (" +
+           log.write("Error updating TEST STATUS (" + partner + ")" + " - (" +
                      this.desc.getTestRequestID() + ")");
         }
       }
@@ -360,13 +370,13 @@ public class ProcessTestRequest extends Thread {
       if (!parseSuccess) {
         FHIRplaceUtil.sendStatus(FHIRplaceConstants.RESULTS_NOT_OK, this.requestFileName, 
                               this.instruct, this.trans, this.params, "Message NAKed");
-        log.write("Test status(" + FHIRplaceUtil.getTP(trans, params) + "): FAILURE - Message NAKed" + " - (" +
+        log.write("Test status(" + partner + "): FAILURE - Message NAKed" + " - (" +
                    this.desc.getTestRequestID() + ")");
 
       } else if (handlerError) {
         FHIRplaceUtil.sendStatus(FHIRplaceConstants.RESULTS_NOT_OK, this.requestFileName, 
                               this.instruct, this.trans, this.params, handlerErrorMsg);
-        log.write("Test status(" + FHIRplaceUtil.getTP(trans, params) + "): " + handlerErrorMsg + " - (" +
+        log.write("Test status(" + partner + "): " + handlerErrorMsg + " - (" +
                   this.desc.getTestRequestID() + ")");
 
         // If the request is still active in the list, make sure it is cancelled 
@@ -379,7 +389,7 @@ public class ProcessTestRequest extends Thread {
         }  
       }
     } catch (Exception e) {
-      log.write("Error updating TEST STATUS (" + FHIRplaceUtil.getTP(trans, params) + ")" + " - (" +
+      log.write("Error updating TEST STATUS (" + partner + ")" + " - (" +
                 this.desc.getTestRequestID() + ")");
       log.writeStackTrace(e, this.desc.getTestRequestID());   // log stack trace
     }    
@@ -417,13 +427,14 @@ public class ProcessTestRequest extends Thread {
     if (!originallySending) {
  
       String sendDataType = instruct.getSendDataType();
-      log.write("Returning a " + sendDataType + " response...");
       
- // *** Put your response to the initial send here
+      // If this was the orignal receiver, return the appropriate data type response 
+      receiver.returnResponse(sendDataType);
+      success = receiver.isResponseSuccess();
     
       // Report the result of that response
-      statusMsg =  success ? "Successfully sent " + sendDataType + " response to " + FHIRplaceUtil.getTP(trans, params) :
-                             "Error sending " + sendDataType + " response to " + FHIRplaceUtil.getTP(trans, params);
+      statusMsg =  success ? "Successfully sent " + sendDataType + " response to " + partner :
+                             "Error sending " + sendDataType + " response to " + partner;
       statusType = success ? FHIRplaceConstants.SENT_OK : FHIRplaceConstants.SENT_NOT_OK;
       FHIRplaceUtil.sendStatus(statusType, requestFileName, this.instruct, this.trans, this.params, statusMsg);
       
@@ -431,23 +442,23 @@ public class ProcessTestRequest extends Thread {
       switch (sendDataType) {
         case FHIRplaceConstants.CLIENT_ID_TYPE :
           // Upload Client ID
-          String clientID = "Some Client ID";
+          String clientID = receiver.getClientID();
           uploadSentData(testRequestID, FHIRplaceConstants.CLIENT_ID_DATA, clientID);
           break;
         
         case FHIRplaceConstants.ACCESS_TOKEN_TYPE :
-          String accessToken = generateMismatchErrors ? "1234567890" : "123456789";
+          String accessToken = receiver.getAccessToken();
           uploadSentData(testRequestID, FHIRplaceConstants.ACCESS_TOKEN_DATA, accessToken);
           break;
           
         case FHIRplaceConstants.FHIR_ID_TYPE :
-          String fhirID = "ABCDEFGHIJKLMNOP";
+          String fhirID = receiver.getFhirID();
           uploadSentData(testRequestID, FHIRplaceConstants.FHIR_ID_DATA, fhirID);           
           break;
           
         case FHIRplaceConstants.PATIENT_DATA_TYPE :
           // Upload the transported headers and metadata in response
-          String headersAndMetaData = "Sent headers and metadata";
+          String headersAndMetaData = receiver.getHeadersAndMetaData();
           uploadSentData(testRequestID, FHIRplaceConstants.TRANSPORT_DATA, headersAndMetaData);
           break;
       }
@@ -456,14 +467,15 @@ public class ProcessTestRequest extends Thread {
 
     } else {  
       String receiveDataType = instruct.getReceiveDataType();
-      log.write("Receiveing a " + receiveDataType + " response...");
 
-  // **** Here's where you will either add code to receive the response or extract
-  //      the result of the response from your initial message      
+      // Here you will either add code to receive the response or extract
+      // the result of the response from your initial message
+      sender.receiveResponseForDataType(receiveDataType);
+      success = sender.isResponseSuccess();
 
       // Report the result of the received response
-      statusMsg  = success ? "Successfully received " + receiveDataType + " response from " + FHIRplaceUtil.getTP(trans, params) :
-                             "Error receiving " + receiveDataType + " response from " + FHIRplaceUtil.getTP(trans, params);
+      statusMsg  = success ? "Successfully received " + receiveDataType + " response from " + partner :
+                             "Error receiving " + receiveDataType + " response from " + partner;
           
       statusType = success ? FHIRplaceConstants.RECEIVED_OK : FHIRplaceConstants.RECEIVED_NOT_OK;
       FHIRplaceUtil.sendStatus(statusType, requestFileName, this.instruct, this.trans, this.params, statusMsg);
@@ -472,7 +484,7 @@ public class ProcessTestRequest extends Thread {
         case FHIRplaceConstants.CLIENT_ID_TYPE :
         {
           // Upload Client ID
-          String clientID = "Some Client ID";
+          String clientID = sender.getClientID();
           uploadReceivedData(testRequestID, FHIRplaceConstants.CLIENT_ID_DATA, clientID, statusMsg);
 
           // Verify whether the client ID is OK or not
@@ -489,7 +501,7 @@ public class ProcessTestRequest extends Thread {
         
         case FHIRplaceConstants.ACCESS_TOKEN_TYPE :
         {
-          String accessToken = "123456789";
+          String accessToken = sender.getAccessToken();
           uploadReceivedData(testRequestID, FHIRplaceConstants.ACCESS_TOKEN_DATA, accessToken, statusMsg);
           
           // Verify whether the access token is OK or not
@@ -506,7 +518,7 @@ public class ProcessTestRequest extends Thread {
 
         case FHIRplaceConstants.FHIR_ID_TYPE :
         {
-          String fhirID = "ABCDEFGHIJKLMNOP";
+          String fhirID = sender.getFhirID();
           uploadReceivedData(testRequestID, FHIRplaceConstants.FHIR_ID_DATA, fhirID, statusMsg);
           
           // Validate whether the FHIR-ID (Member ID) is OK or not
@@ -524,7 +536,7 @@ public class ProcessTestRequest extends Thread {
         case FHIRplaceConstants.PATIENT_DATA_TYPE :
         {
           // Upload the transported headers and metadata in response
-          String headersAndMetaData = "Received headers and metadata";
+          String headersAndMetaData = sender.getHeadersAndMetaData();
           uploadReceivedData(testRequestID, FHIRplaceConstants.TRANSPORT_DATA, headersAndMetaData, statusMsg);
           
           // Verify whether the patient data is OK or not
@@ -548,7 +560,7 @@ public class ProcessTestRequest extends Thread {
    
     this.params.removeActiveTest(testRequestID);
     if (params.isDebugMode()) {
-      log.write("Removed partner '" + FHIRplaceUtil.getTP(trans, params) + "' from list of active tests. (" + testRequestID + ")\n");
+      log.write("Removed partner '" + partner + "' from list of active tests. (" + testRequestID + ")\n");
     }  
   }  
 
@@ -574,7 +586,7 @@ public class ProcessTestRequest extends Thread {
         fileUtility.uploadData(FHIRplaceConstants.SENT_DATA, uploadType, sentData, 
                                testRequestID, upload.getResponseID(), params.getStatusDirectory());
 
-        log.write("Uploaded " + uploadTypeDesc + " (" + sentData + ") sent to " + FHIRplaceUtil.getTP(trans, params) + " - (" + testRequestID + ")");
+        log.write("Uploaded " + uploadTypeDesc + " (" + sentData + ") sent to " + partner + " - (" + testRequestID + ")");
         count++;
       }
       if (count == 0) {
@@ -583,7 +595,7 @@ public class ProcessTestRequest extends Thread {
       }
 
     } catch (Exception e) {
-      log.write("Error uploading " + uploadTypeDesc + " sent to " + FHIRplaceUtil.getTP(trans, params) + " - (" + testRequestID + ")");
+      log.write("Error uploading " + uploadTypeDesc + " sent to " + partner + " - (" + testRequestID + ")");
       log.writeStackTrace(e, testRequestID);   // log stack trace
     }        
   }
@@ -615,7 +627,7 @@ public class ProcessTestRequest extends Thread {
                                testRequestID, upload.getResponseID(), params.getStatusDirectory());
 
         log.write("Uploaded " + uploadTypeDesc + " (" + receivedData +  ") received from " + 
-                  FHIRplaceUtil.getTP(trans, params) + " - (" + testRequestID + ")");
+                  partner + " - (" + testRequestID + ")");
         count++;
       }
       if (count == 0) {
@@ -623,7 +635,7 @@ public class ProcessTestRequest extends Thread {
       }
     } catch (Exception e) {
       recvMsg = e.getMessage();
-      log.write("Error uploading " + uploadTypeDesc + " received from " + FHIRplaceUtil.getTP(trans, params) + " - ( " +
+      log.write("Error uploading " + uploadTypeDesc + " received from " + partner + " - ( " +
                 testRequestID + ")");
       
       log.writeStackTrace(e, testRequestID);
@@ -647,7 +659,7 @@ public class ProcessTestRequest extends Thread {
       String messageText = "Cancelled by user";
       FHIRplaceUtil.sendStatus(FHIRplaceConstants.RESULTS_NOT_OK, this.requestFileName, this.instruct, this.trans, this.params, messageText);
       
-      log.write("Test status (" + FHIRplaceUtil.getTP(trans, params) + "): " + messageText + " - ( " + requestID + ")");
+      log.write("Test status (" + partner + "): " + messageText + " - ( " + requestID + ")");
       this.params.removeCancelledTestRequest(requestID);
 
     } else if (verificationError) {
@@ -656,7 +668,7 @@ public class ProcessTestRequest extends Thread {
         fullErrorMessage += " ";
 
       FHIRplaceUtil.sendStatus(FHIRplaceConstants.RESULTS_NOT_OK, this.requestFileName, this.instruct, this.trans, this.params, fullErrorMessage);
-      log.write("Test status (" + FHIRplaceUtil.getTP(trans, params) + "): " + fullErrorMessage + " - ( " + requestID + ")");
+      log.write("Test status (" + partner + "): " + fullErrorMessage + " - ( " + requestID + ")");
 
       
     } else if (success) {
@@ -665,7 +677,7 @@ public class ProcessTestRequest extends Thread {
       FHIRplaceUtil.sendStatus(FHIRplaceConstants.RESULTS_OK, this.requestFileName, this.instruct, this.trans, this.params, successMsg);
       StringBuilder buf = new StringBuilder();
 
-      buf.append("Test Status (").append(FHIRplaceUtil.getTP(trans, params)).append(") - ").append(successMsg);
+      buf.append("Test Status (").append(partner).append(") - ").append(successMsg);
       log.write(buf.toString() + " - (" + requestID + ")");
 
     } else {
@@ -685,7 +697,7 @@ public class ProcessTestRequest extends Thread {
         }
       }
       FHIRplaceUtil.sendStatus(FHIRplaceConstants.RESULTS_NOT_OK, this.requestFileName, this.instruct, this.trans, this.params, messageText);
-      log.write("Test status (" + FHIRplaceUtil.getTP(trans, params) + "): FAILURE - " + messageText + " - ( " + requestID + ")");
+      log.write("Test status (" + partner + "): FAILURE - " + messageText + " - ( " + requestID + ")");
     }    
   }  
 }

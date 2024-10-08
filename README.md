@@ -4,16 +4,11 @@ This is a stubbed version of FHIRplace Handler to help with the creation of a wo
 
 The interactions with the FHIRplace Client have already been coded against all the elements within the current test cases.
 This includes all parsing of the test requests and placement of the test request element values into the corresponding container classes.
-You should only need to add your own FHIR implementation code in the specified sections of the ProcessTestRequest class for each test case.
+You should only need to add your own FHIR implementation code in the specified sections of the SendAsClient class (for New Payer) and/or the
+ReceiveAsServer class (for Old Payer) for each test case.
 
-Please note that there may be some confusion regarding the ProcessTestRequest respondToInitialSendOrReceive() method:
 The test requests require reporting, uploading and sometimes verification of certain pieces of the sending and receiving processes.
-In actuality, this is probably done in one step within the FHIR client send and FHIR server receive processes, however pieces of 
-this step will need to be extracted and uploaded individually.
-
-To accommodate this, you may record all the parts of your sending and receiving (requests and responses) into a container class,
-including any test statuses, HTTP responses, Access Token values, Member Identifiers, Patient Data, etc., and then extract those 
-values for recording the values identified in the provided stubbed source code and then test your updated code.
+The ProcessTestRequest class will take care of all that for you as long as you provide the correct within your SendAsClient / ReceiveAsServer implementations. These values are currently set with placeholder values. As part of your implementation, you may record all the parts of your sending and receiving (requests and responses) into these classes, including any test statuses, HTTP responses, Access Token values, Member Identifiers, Patient Data, and so on.  The ProcessTestRequest class will extract those values using the corresponding get() methods provided in these classes.
 
 
 ## Building the code

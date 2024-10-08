@@ -8,7 +8,7 @@ You should only need to add your own FHIR implementation code in the specified s
 ReceiveAsServer class (for Old Payer) for each test case.
 
 The test requests require reporting, uploading and sometimes verification of certain pieces of the sending and receiving processes.
-The ProcessTestRequest class will take care of all that for you as long as you provide the correct within your SendAsClient / ReceiveAsServer implementations. These values are currently set with placeholder values. As part of your implementation, you may record all the parts of your sending and receiving (requests and responses) into these classes, including any test statuses, HTTP responses, Access Token values, Member Identifiers, Patient Data, and so on.  The ProcessTestRequest class will extract those values using the corresponding get() methods provided in these classes.
+The ProcessTestRequest class will take care of all that for you as long as you provide the correct values within your SendAsClient / ReceiveAsServer implementations. These values are currently set with placeholder values. As part of your implementation, you may record all the parts of your sending and receiving (requests and responses) into these classes, including any test statuses, HTTP responses, Access Token values, Member Identifiers, Patient Data, and so on.  The ProcessTestRequest class will extract those values using the corresponding get() methods provided in these classes.
 
 
 ## Building the code

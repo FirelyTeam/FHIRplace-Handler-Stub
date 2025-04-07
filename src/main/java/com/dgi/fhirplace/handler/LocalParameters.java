@@ -25,12 +25,15 @@ public class LocalParameters {
   static String ARCHIVE_DIR_PROP = "com.dgi.archivedir";
   static String PAYLOAD_DIR_PROP = "com.dgi.payloaddir";
   static String XML_IDENTIFIER_PROP = "com.dgi.participantid";
+
+  static FHIRServerConfig fhirServerConfig = new FHIRServerConfig();
    
   String testRequestDirectory = null;
   String statusDirectory = null;
   String archiveDirectory = null;
   String payloadDirectory = null;
   String xmlUser = null;
+  boolean isReceivingServer = false;
   
   boolean cancelledTestRequest = false;
   
@@ -60,6 +63,24 @@ public class LocalParameters {
         archiveDirectory = p.getProperty(ARCHIVE_DIR_PROP);
         payloadDirectory = p.getProperty(PAYLOAD_DIR_PROP);
         xmlUser = p.getProperty(XML_IDENTIFIER_PROP);
+
+        // Load the FHIR server configuration if this test participant is a receiving server
+        isReceivingServer = Boolean.parseBoolean(p.getProperty("com.dgi.isreceivingserver"));
+
+        if (isReceivingServer) {
+          fhirServerConfig.baseUrl = p.getProperty("com.dgi.fhirserverbaseurl");
+          fhirServerConfig.accessTokenUrl = p.getProperty("com.dgi.accesstokenurl");
+          fhirServerConfig.fhirplaceClientId = p.getProperty("com.dgi.fhirplaceclientid");
+          fhirServerConfig.fhirplaceClientSecret = p.getProperty("com.dgi.fhirplaceclientsecret");
+          fhirServerConfig.scope = p.getProperty("com.dgi.scope");
+          fhirServerConfig.audience = p.getProperty("com.dgi.audience");
+          
+          if (!fhirServerConfig.validate()) {
+            log.write("FHIR Server configuration is invalid");
+          }
+        }
+
+
                               
       } catch (Exception ex) {
         log.writeStackTrace(ex);
@@ -97,6 +118,12 @@ public class LocalParameters {
   }
   public String getXMLIdentifier() {
     return xmlUser;
+  }
+  public boolean isReceivingServer() {
+    return this.isReceivingServer;
+  }
+  public FHIRServerConfig getFHIRServerConfig() {
+    return fhirServerConfig;
   }
   
   public void dumpValues() {

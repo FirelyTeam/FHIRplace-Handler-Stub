@@ -26,6 +26,7 @@ public class ProcessTestRequest extends Thread {
 
   FHIRplaceHandler handler = null;
   LocalParameters params = null;
+  FHIRAuditEventService auditEventService = null;
   
   SendAsClient sender = null;
   ReceiveAsServer receiver = null;
@@ -48,10 +49,11 @@ public class ProcessTestRequest extends Thread {
   // Note: This is not used for the "Happy Path" tests.
   boolean generateMismatchErrors = false;
   
-  public ProcessTestRequest(FHIRplaceHandler handler, LocalParameters params, String requestFileName) {
+  public ProcessTestRequest(FHIRplaceHandler handler, LocalParameters params, FHIRAuditEventService auditEventService, String requestFileName) {
     this.handler = handler;
     
     this.params = params;
+    this.auditEventService = auditEventService;
     this.requestFileName = requestFileName;
 
     this.fileUtility = new FileUtility();
@@ -204,7 +206,7 @@ public class ProcessTestRequest extends Thread {
                      " from " + partner + " (" + testRequestID + ")" );
 
           // Put connection receiving code in the ReceiveAsServer class
-          receiver = new ReceiveAsServer(testRequestID, partner, receiveDataType, this.trans, this.log);
+          receiver = new ReceiveAsServer(this.auditEventService, testRequestID, partner, receiveDataType, this.trans, this.log);
 
           // This method should wait for the request from the sender, send a response
           // then update the values that were requested and returned within the ReceiveAsServer object

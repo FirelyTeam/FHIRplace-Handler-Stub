@@ -24,9 +24,13 @@ public class FHIRplaceHandler {
   public void start() {
     // Perform any necessary set up here...
     log.write("Using XML Identifier: " + params.getXMLIdentifier() + "\n");
+
+    // Initialize AuditEvent FHIR HTTP client if test participant is a receiving server
+    // TODO use some kind of dependency injection or service pattern to manage this
+    var auditEventService = (params.isReceivingServer) ? new FHIRAuditEventService(params.fhirServerConfig) : null;
     
     // Poll the test request directory and process incoming test request messages
-    incomingMsgProcessor = new ProcessIncomingMessages(this, params);
+    incomingMsgProcessor = new ProcessIncomingMessages(this, params, auditEventService);
     incomingMsgProcessor.start();
   }
   

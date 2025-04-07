@@ -36,7 +36,21 @@
 			<artifactId>xml-apis</artifactId>
 			<version>1.4.01</version>
 		</dependency>
+		
+		<!-- HAPI FHIR Base for parsing and working with FHIR resources -->
+		<dependency>
+			<groupId>ca.uhn.hapi.fhir</groupId>
+			<artifactId>hapi-fhir-base</artifactId>
+			<version>6.8.0</version> <!-- Check for latest version -->
+		</dependency>
 
+		<!-- HAPI FHIR Model for FHIR R4 -->
+		<dependency>
+			<groupId>ca.uhn.hapi.fhir</groupId>
+			<artifactId>hapi-fhir-structures-r4</artifactId>
+			<version>6.8.0</version>
+		</dependency>
+		<!-- If you need FHIR R5, replace "r4" with "r5" in the artifact ID -->
 	</dependencies>
 
 	<build>

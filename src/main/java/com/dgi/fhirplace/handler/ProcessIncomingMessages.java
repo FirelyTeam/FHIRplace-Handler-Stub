@@ -15,6 +15,7 @@ public class ProcessIncomingMessages extends Thread {
   
   FHIRplaceHandler handler = null;
   LocalParameters params = null;
+  FHIRAuditEventService auditEventService = null;
 
   String tesRequestFileName = null;
   String cancelTestRequestFileName = null;
@@ -25,9 +26,10 @@ public class ProcessIncomingMessages extends Thread {
   
   Logger log = new Logger(ProcessIncomingMessages.class);
   
-  public ProcessIncomingMessages(FHIRplaceHandler handler, LocalParameters params) {
+  public ProcessIncomingMessages(FHIRplaceHandler handler, LocalParameters params, FHIRAuditEventService auditEventService) {
     this.handler = handler;
     this.params = params;
+    this.auditEventService = auditEventService;
   }
 
   private boolean forever = true;
@@ -56,7 +58,7 @@ public class ProcessIncomingMessages extends Thread {
             tesRequestFileName.toLowerCase().contains("kill")) {
           this.params.addActiveTest(testRequestNum);
           log.write("Received " + tesRequestFileName + ", request " + testRequestNum);
-          ProcessTestRequest request = new ProcessTestRequest(this.handler, this.params, tesRequestFileName);
+          ProcessTestRequest request = new ProcessTestRequest(this.handler, this.params, this.auditEventService, tesRequestFileName);
 
           // Add request to a table so we can find associated objects for a test request number 
           // if we need to access the object later
